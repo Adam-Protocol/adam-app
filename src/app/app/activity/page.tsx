@@ -1,0 +1,240 @@
+'use client';
+
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useAccount } from '@starknet-react/core';
+import { useQuery } from '@tanstack/react-query';
+import { Activity, ChevronDown, Filter, ExternalLink, X } from 'lucide-react';
+import axios from 'axios';
+import { clsx } from 'clsx';
+
+const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+
+const STATUS_CONFIG: Record<string, { color: string; bg: string }> = {
+  completed: { color: 'text-accent-green', bg: 'bg-accent-green/15' },
+  failed: { color: 'text-accent-red', bg: 'bg-accent-red/15' },
+  pending: { color: 'text-accent-amber', bg: 'bg-accent-amber/15' },
+  processing: { color: 'text-accent-cyan', bg: 'bg-accent-cyan/15' },
+};
+
+const TYPE_CONFIG: Record<string, { emoji: string; label: string }> = {
+  buy: { emoji: '⬇️', label: 'Buy' },
+  sell: { emoji: '⬆️', label: 'Sell' },
+  swap: { emoji: '🔄', label: 'Swap' },
+};
+
+function TxRow({ tx, onClick }: { tx: any; onClick: () => void }) {
+  const status = STATUS_CONFIG[tx.status] ?? STATUS_CONFIG.pending;
+  const type = TYPE_CONFIG[tx.type] ?? { emoji: '📄', label: tx.type };
+
+  return (
+    <motion.tr
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      onClick={onClick}
+      className="border-b border-white/5 hover:bg-white/3 transition-colors cursor-pointer"
+    >
+      <td className="px-5 py-4">
+        <div className="flex items-center gap-2">
+          <span className="text-base">{type.emoji}</span>
+          <span className="font-medium text-white text-sm capitalize">{type.label}</span>
+        </div>
+      </td>
+      <td className="px-5 py-4 text-white/50 text-sm">
+        {tx.token_in} → {tx.token_out}
+      </td>
+      <td className="px-5 py-4">
+        <span className={`token-badge ${status.bg} ${status.color} text-xs`}>
+          {tx.status}
+        </span>
+      </td>
+      <td className="px-5 py-4 text-white/40 text-xs">
+        {new Date(tx.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+      </td>
+      <td className="px-5 py-4">
+        {tx.tx_hash && (
+          <a
+            href={`https://sepolia.starkscan.co/tx/${tx.tx_hash}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="text-brand-400 hover:text-brand-300 transition-colors"
+          >
+            <ExternalLink size={14} />
+          </a>
+        )}
+      </td>
+    </motion.tr>
+  );
+}
+
+function TxDrawer({ tx, onClose }: { tx: any; onClose: () => void }) {
+  const status = STATUS_CONFIG[tx?.status] ?? STATUS_CONFIG.pending;
+  return (
+    <AnimatePresence>
+      {tx && (
+        <>
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 z-40 backdrop-blur-sm"
+            onClick={onClose}
+          />
+          <motion.div
+            initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
+            transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+            className="fixed right-0 top-0 h-full w-full max-w-md glass-strong border-l border-white/10 z-50 p-6 overflow-y-auto"
+          >
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-lg font-bold text-white">Transaction Details</h2>
+              <button onClick={onClose} className="text-white/40 hover:text-white transition-colors">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="space-y-4">
+              {[
+                ['Type', tx.type?.toUpperCase()],
+                ['Status', tx.status],
+                ['Token In', tx.token_in],
+                ['Token Out', tx.token_out],
+                ['Reference', tx.reference_id ?? '—'],
+                ['Currency', tx.currency ?? '—'],
+                ['Created', new Date(tx.created_at).toLocaleString()],
+              ].map(([label, value]) => (
+                <div key={label} className="flex justify-between items-center py-3 border-b border-white/5">
+                  <span className="text-white/40 text-sm">{label}</span>
+                  <span className={`text-sm font-medium ${label === 'Status' ? `${status.color}` : 'text-white'}`}>{value}</span>
+                </div>
+              ))}
+              {tx.tx_hash && (
+                <a
+                  href={`https://sepolia.starkscan.co/tx/${tx.tx_hash}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-brand-400 hover:text-brand-300 text-sm mt-4"
+                >
+                  <ExternalLink size={14} /> View on Starkscan
+                </a>
+              )}
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+}
+
+export default function ActivityPage() {
+  const { address, isConnected } = useAccount();
+  const [page, setPage] = useState(1);
+  const [filter, setFilter] = useState('all');
+  const [selected, setSelected] = useState<any>(null);
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['activity', address, page, filter],
+    queryFn: () => axios.get(`${API}/activity/${address}`, {
+      params: { page, limit: 15, type: filter },
+    }).then(r => r.data),
+    enabled: !!address,
+  });
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-accent-green to-brand-500 flex items-center justify-center">
+            <Activity size={18} className="text-white" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-black text-white">Activity</h1>
+            <p className="text-white/40 text-sm">All your transactions</p>
+          </div>
+        </div>
+
+        {/* Filter */}
+        <div className="flex items-center gap-2">
+          {['all', 'buy', 'sell', 'swap'].map((t) => (
+            <button
+              key={t}
+              onClick={() => { setFilter(t); setPage(1); }}
+              className={clsx(
+                'px-3 py-1.5 rounded-lg text-xs font-medium transition-all capitalize',
+                filter === t
+                  ? 'bg-brand-500/20 text-brand-400 border border-brand-500/30'
+                  : 'text-white/40 hover:text-white hover:bg-white/5'
+              )}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {!isConnected ? (
+        <div className="gradient-border rounded-2xl py-20 text-center">
+          <Activity size={40} className="mx-auto mb-4 text-white/20" />
+          <p className="text-white/40">Connect your wallet to view activity</p>
+        </div>
+      ) : (
+        <div className="gradient-border overflow-hidden rounded-2xl">
+          {isLoading ? (
+            <div className="py-20 text-center text-white/30">Loading...</div>
+          ) : data?.data?.length > 0 ? (
+            <>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-white/5 text-white/30">
+                    <th className="text-left px-5 py-3.5 font-medium">Type</th>
+                    <th className="text-left px-5 py-3.5 font-medium">Tokens</th>
+                    <th className="text-left px-5 py-3.5 font-medium">Status</th>
+                    <th className="text-left px-5 py-3.5 font-medium">Date</th>
+                    <th className="px-5 py-3.5" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.data.map((tx: any) => (
+                    <TxRow key={tx.id} tx={tx} onClick={() => setSelected(tx)} />
+                  ))}
+                </tbody>
+              </table>
+
+              {/* Pagination */}
+              {data.meta.total_pages > 1 && (
+                <div className="flex items-center justify-between border-t border-white/5 px-5 py-3">
+                  <p className="text-white/30 text-xs">
+                    {data.meta.total} transactions
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      disabled={page === 1}
+                      onClick={() => setPage(p => p - 1)}
+                      className="px-3 py-1.5 glass rounded-lg text-xs text-white/60 hover:text-white disabled:opacity-30 transition-all"
+                    >
+                      Prev
+                    </button>
+                    <span className="px-3 py-1.5 text-xs text-white/40">
+                      {page} / {data.meta.total_pages}
+                    </span>
+                    <button
+                      disabled={page >= data.meta.total_pages}
+                      onClick={() => setPage(p => p + 1)}
+                      className="px-3 py-1.5 glass rounded-lg text-xs text-white/60 hover:text-white disabled:opacity-30 transition-all"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="py-20 text-center text-white/30">
+              <Activity size={36} className="mx-auto mb-3 opacity-30" />
+              <p>No {filter === 'all' ? '' : filter} transactions yet</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      <TxDrawer tx={selected} onClose={() => setSelected(null)} />
+    </div>
+  );
+}

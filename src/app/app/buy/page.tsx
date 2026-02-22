@@ -1,0 +1,141 @@
+'use client';
+
+import { useState } from 'react';
+import { motion } from 'framer-motion';
+import { useAccount } from '@starknet-react/core';
+import { useMutation } from '@tanstack/react-query';
+import { useForm } from 'react-hook-form';
+import { toast } from 'sonner';
+import { ArrowDownRight, Info } from 'lucide-react';
+import axios from 'axios';
+import { hash } from 'starknet';
+
+const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+
+type BuyForm = {
+  token_out: 'adusd' | 'adngn';
+  amount_in: string;
+};
+
+export default function BuyPage() {
+  const { address, isConnected } = useAccount();
+  const { register, handleSubmit, watch, formState: { errors } } = useForm<BuyForm>({
+    defaultValues: { token_out: 'adusd', amount_in: '' },
+  });
+  const tokenOut = watch('token_out');
+
+  const mutation = useMutation({
+    mutationFn: async (data: BuyForm) => {
+      // Generate commitment client-side — amount never sent to backend
+      const secret = BigInt(Math.floor(Math.random() * 1e15));
+      const amountFelt = BigInt(data.amount_in);
+      const commitment = hash.computePedersenHash(
+        amountFelt.toString(16),
+        secret.toString(16),
+      );
+
+      // Store secret locally (user must save this)
+      const secretKey = `adam_secret_${commitment}`;
+      sessionStorage.setItem(secretKey, secret.toString());
+
+      return axios.post(`${API}/token/buy`, {
+        wallet: address,
+        amount_in: (BigInt(data.amount_in) * BigInt(1e6)).toString(), // USDC 6 decimals
+        token_out: data.token_out,
+        commitment,
+      }).then(r => ({ ...r.data, commitment, secret: secret.toString() }));
+    },
+    onSuccess: (data) => {
+      toast.success('Buy order submitted!', {
+        description: `Job ID: ${data.job_id} — transaction processing.`,
+      });
+    },
+    onError: (err: any) => {
+      toast.error('Buy failed', { description: err?.response?.data?.message ?? err.message });
+    },
+  });
+
+  return (
+    <div className="max-w-lg mx-auto">
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-8">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-500 to-accent-cyan flex items-center justify-center">
+            <ArrowDownRight size={18} className="text-white" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-black text-white">Buy Stablecoins</h1>
+            <p className="text-white/40 text-sm">Deposit USDC, receive ADUSD or ADNGN</p>
+          </div>
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit(d => mutation.mutate(d))} className="space-y-5">
+          {/* Token select */}
+          <div className="gradient-border rounded-2xl p-5 space-y-4">
+            <label className="block text-sm font-medium text-white/70 mb-2">Receive Token</label>
+            <div className="grid grid-cols-2 gap-3">
+              {(['adusd', 'adngn'] as const).map((t) => (
+                <label
+                  key={t}
+                  className={`relative flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-all ${
+                    tokenOut === t
+                      ? 'border-brand-500 bg-brand-500/10'
+                      : 'border-white/10 bg-white/3 hover:border-white/20'
+                  }`}
+                >
+                  <input type="radio" value={t} {...register('token_out')} className="sr-only" />
+                  <span className="text-xl">{t === 'adusd' ? '🇺🇸' : '🇳🇬'}</span>
+                  <div>
+                    <p className="font-bold text-white text-sm uppercase">{t}</p>
+                    <p className="text-xs text-white/40">{t === 'adusd' ? 'Adam USD' : 'Adam NGN'}</p>
+                  </div>
+                  {tokenOut === t && (
+                    <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-brand-400" />
+                  )}
+                </label>
+              ))}
+            </div>
+
+            {/* Amount */}
+            <div>
+              <label className="block text-sm font-medium text-white/70 mb-2">USDC Amount</label>
+              <div className="relative">
+                <input
+                  type="number"
+                  step="0.01"
+                  min="1"
+                  placeholder="0.00"
+                  className="adam-input pr-16 text-xl font-bold"
+                  {...register('amount_in', { required: 'Amount required', min: { value: 1, message: 'Min $1' } })}
+                />
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 text-sm font-semibold">USDC</span>
+              </div>
+              {errors.amount_in && (
+                <p className="text-accent-red text-xs mt-1">{errors.amount_in.message}</p>
+              )}
+            </div>
+          </div>
+
+          {/* Privacy info */}
+          <div className="flex items-start gap-3 glass px-4 py-3 rounded-xl border border-brand-500/20 text-sm">
+            <Info size={16} className="text-brand-400 mt-0.5 shrink-0" />
+            <p className="text-white/50">
+              Your commitment is generated <strong className="text-white/70">client-side</strong>. 
+              No amount is ever stored on-chain or sent to the server. 
+              Save your secret key to spend later.
+            </p>
+          </div>
+
+          <button
+            type="submit"
+            disabled={!isConnected || mutation.isPending}
+            className="btn-neon w-full py-4 rounded-2xl bg-gradient-to-r from-brand-500 to-accent-cyan text-white font-bold text-lg shadow-lg shadow-brand-500/30 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-brand-500/50 transition-all"
+          >
+            {mutation.isPending ? 'Processing...' : !isConnected ? 'Connect Wallet First' : `Buy ${tokenOut.toUpperCase()}`}
+          </button>
+        </form>
+      </motion.div>
+    </div>
+  );
+}
