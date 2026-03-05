@@ -14,15 +14,15 @@ function StatCard({ label, value, icon: Icon, color, change }: any) {
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      className="gradient-border p-6 flex flex-col gap-3"
+      className="gradient-border p-5 sm:p-6 flex flex-col gap-3"
     >
       <div className="flex items-center justify-between">
-        <span className="text-white/50 text-sm">{label}</span>
-        <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${color}`}>
-          <Icon size={18} className="text-white" />
+        <span className="text-white/50 text-xs sm:text-sm">{label}</span>
+        <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center ${color}`}>
+          <Icon size={16} className="text-white sm:w-[18px] sm:h-[18px]" />
         </div>
       </div>
-      <p className="text-3xl font-black text-white">{value}</p>
+      <p className="text-2xl sm:text-3xl font-black text-white">{value}</p>
       {change && (
         <p className="text-xs text-accent-green flex items-center gap-1">
           <TrendingUp size={12} /> {change}
@@ -38,13 +38,13 @@ function QuickAction({ href, icon: Icon, label, desc, color }: any) {
       <motion.div
         whileHover={{ scale: 1.02, y: -2 }}
         whileTap={{ scale: 0.98 }}
-        className="glass-strong rounded-2xl p-5 border border-white/10 hover:border-white/20 transition-all cursor-pointer group"
+        className="glass-strong rounded-xl sm:rounded-2xl p-4 sm:p-5 border border-white/10 hover:border-white/20 transition-all cursor-pointer group"
       >
-        <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
-          <Icon size={18} className="text-white" />
+        <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center mb-2 sm:mb-3 group-hover:scale-110 transition-transform`}>
+          <Icon size={16} className="text-white sm:w-[18px] sm:h-[18px]" />
         </div>
-        <p className="font-semibold text-white">{label}</p>
-        <p className="text-xs text-white/40 mt-1">{desc}</p>
+        <p className="font-semibold text-white text-sm sm:text-base">{label}</p>
+        <p className="text-xs text-white/40 mt-1 hidden sm:block">{desc}</p>
       </motion.div>
     </Link>
   );
@@ -68,19 +68,19 @@ export default function DashboardPage() {
   });
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-black text-white">Dashboard</h1>
-          <p className="text-white/40 text-sm mt-1">
+          <h1 className="text-2xl sm:text-3xl font-black text-white">Dashboard</h1>
+          <p className="text-white/40 text-sm mt-1 break-all">
             {isConnected && address
               ? `${address.slice(0, 10)}...${address.slice(-6)}`
               : 'Connect your wallet to get started'}
           </p>
         </div>
         {ratData && (
-          <div className="glass px-4 py-2 rounded-xl border border-white/10 text-sm">
+          <div className="glass px-4 py-2 rounded-xl border border-white/10 text-sm whitespace-nowrap">
             <span className="text-white/40">1 USD = </span>
             <span className="font-bold text-white">₦{ratData.usd_ngn?.toFixed(2)}</span>
           </div>
@@ -88,7 +88,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <StatCard
           label="ADUSD Balance"
           value="—"
@@ -113,7 +113,7 @@ export default function DashboardPage() {
       {/* Quick Actions */}
       <div>
         <h2 className="text-lg font-semibold text-white mb-4">Quick Actions</h2>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <QuickAction href="/app/buy" icon={ArrowDownRight} label="Buy" desc="Mint with USDC" color="from-brand-500 to-accent-cyan" />
           <QuickAction href="/app/sell" icon={ArrowUpRight} label="Sell" desc="Offramp to bank" color="from-accent-purple to-brand-500" />
           <QuickAction href="/app/swap" icon={RefreshCw} label="Swap" desc="ADUSD ↔ ADNGN" color="from-accent-cyan to-accent-purple" />
@@ -130,7 +130,8 @@ export default function DashboardPage() {
           </div>
           <div className="gradient-border overflow-hidden rounded-2xl">
             {activity?.data?.length > 0 ? (
-              <table className="w-full text-sm">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm min-w-[600px]">
                 <thead>
                   <tr className="border-b border-white/5 text-white/40">
                     <th className="text-left px-5 py-3 font-medium">Type</th>
@@ -160,6 +161,7 @@ export default function DashboardPage() {
                   ))}
                 </tbody>
               </table>
+              </div>
             ) : (
               <div className="py-16 text-center text-white/30">
                 <Coins size={32} className="mx-auto mb-3 opacity-30" />
