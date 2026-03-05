@@ -61,15 +61,15 @@ export default function SwapPage() {
   });
 
   return (
-    <div className="max-w-lg mx-auto">
+    <div className="max-w-lg mx-auto px-2 sm:px-0">
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
-        <div className="flex items-center gap-3 mb-8">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-accent-cyan to-accent-purple flex items-center justify-center">
-            <RefreshCw size={18} className="text-white" />
+        <div className="flex items-center gap-3 mb-6 sm:mb-8">
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-accent-cyan to-accent-purple flex items-center justify-center">
+            <RefreshCw size={16} className="text-white sm:w-[18px] sm:h-[18px]" />
           </div>
           <div>
-            <h1 className="text-2xl font-black text-white">Swap</h1>
-            <p className="text-white/40 text-sm">ADUSD ↔ ADNGN at live rates</p>
+            <h1 className="text-xl sm:text-2xl font-black text-white">Swap</h1>
+            <p className="text-white/40 text-xs sm:text-sm">ADUSD ↔ ADNGN at live rates</p>
           </div>
         </div>
 
@@ -141,15 +141,15 @@ export default function SwapPage() {
             </div>
           )}
 
-          <div className="flex items-start gap-3 glass px-4 py-3 rounded-xl border border-accent-cyan/20 text-sm">
-            <Info size={16} className="text-accent-cyan mt-0.5 shrink-0" />
+          <div className="flex items-start gap-2 sm:gap-3 glass px-3 sm:px-4 py-3 rounded-xl border border-accent-cyan/20 text-xs sm:text-sm">
+            <Info size={14} className="text-accent-cyan mt-0.5 shrink-0 sm:w-4 sm:h-4" />
             <p className="text-white/50">Swap amounts are hidden on-chain. A new commitment is generated client-side for the output token.</p>
           </div>
 
           <button
             type="submit"
             disabled={!isConnected || mutation.isPending || !watch('amount_in')}
-            className="btn-neon w-full py-4 rounded-2xl bg-gradient-to-r from-accent-cyan to-accent-purple text-white font-bold text-lg shadow-lg shadow-accent-cyan/30 disabled:opacity-50 transition-all"
+            className="btn-neon w-full py-3.5 sm:py-4 rounded-xl sm:rounded-2xl bg-gradient-to-r from-accent-cyan to-accent-purple text-white font-bold text-base sm:text-lg shadow-lg shadow-accent-cyan/30 disabled:opacity-50 transition-all active:scale-98"
           >
             {mutation.isPending ? 'Processing...' : !isConnected ? 'Connect Wallet First' : `Swap ${tokenIn.toUpperCase()} → ${tokenOut.toUpperCase()}`}
           </button>
