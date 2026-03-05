@@ -39,7 +39,7 @@ const FEATURES = [
   {
     icon: Users,
     title: 'Built on Starknet',
-    desc: 'Leverages Starknet's STARK proofs for cheap, fast, and verifiable transactions.',
+    desc: 'Leverages Starknet\'s STARK proofs for cheap, fast, and verifiable transactions.',
     color: 'from-brand-400 to-accent-purple',
   },
 ];
