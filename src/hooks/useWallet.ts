@@ -1,12 +1,12 @@
 import { useCallback } from 'react';
-import { useAccount, useConnect, useDisconnect } from '@starknet-react/core';
+import { useAccount, useDisconnect } from '@starknet-react/core';
 import { connect } from 'starknetkit';
 import { InjectedConnector } from 'starknetkit/injected';
 import { WebWalletConnector } from 'starknetkit/webwallet';
 
 /**
  * Wrapper around starknetkit's connect() with recommended connectors.
- * Returns address, isConnected, connect, disconnect.
+ * Returns address, shortAddress, isConnected, connectWallet, disconnect.
  */
 export function useWallet() {
   const { address, isConnected, status } = useAccount();

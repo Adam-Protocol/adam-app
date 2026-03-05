@@ -1,10 +1,5 @@
-import axios, { AxiosError } from 'axios';
-import { useMutation, useQuery, UseQueryOptions } from '@tanstack/react-query';
-
-const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000',
-  headers: { 'Content-Type': 'application/json' },
-});
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { api } from '@/lib/api';
 
 // ─── Token ────────────────────────────────────────────────────────────────────
 
@@ -27,10 +22,14 @@ export type SellPayload = {
 };
 
 export const useBuy = () =>
-  useMutation({ mutationFn: (p: BuyPayload) => api.post('/token/buy', p).then(r => r.data) });
+  useMutation({ 
+    mutationFn: (payload: BuyPayload) => api.token.buy(payload).then(r => r.data) 
+  });
 
 export const useSell = () =>
-  useMutation({ mutationFn: (p: SellPayload) => api.post('/token/sell', p).then(r => r.data) });
+  useMutation({ 
+    mutationFn: (payload: SellPayload) => api.token.sell(payload).then(r => r.data) 
+  });
 
 // ─── Swap ──────────────────────────────────────────────────────────────────────
 
@@ -44,12 +43,14 @@ export type SwapPayload = {
 };
 
 export const useSwap = () =>
-  useMutation({ mutationFn: (p: SwapPayload) => api.post('/swap', p).then(r => r.data) });
+  useMutation({ 
+    mutationFn: (payload: SwapPayload) => api.swap.execute(payload).then(r => r.data) 
+  });
 
 export const useRate = () =>
   useQuery({
     queryKey: ['rate'],
-    queryFn: () => api.get('/swap/rate').then(r => r.data as { usd_ngn: number; updated_at: string }),
+    queryFn: () => api.swap.getRate().then(r => r.data),
     refetchInterval: 30_000,
     staleTime: 25_000,
   });
@@ -66,8 +67,7 @@ export type ActivityParams = {
 export const useActivity = ({ wallet, page = 1, limit = 20, type = 'all' }: ActivityParams) =>
   useQuery({
     queryKey: ['activity', wallet, page, limit, type],
-    queryFn: () =>
-      api.get(`/activity/${wallet}`, { params: { page, limit, type } }).then(r => r.data),
+    queryFn: () => api.activity.getByWallet(wallet, { page, limit, type }).then(r => r.data),
     enabled: !!wallet,
     staleTime: 10_000,
   });
@@ -77,7 +77,7 @@ export const useActivity = ({ wallet, page = 1, limit = 20, type = 'all' }: Acti
 export const useOfframpStatus = (referenceId: string | null) =>
   useQuery({
     queryKey: ['offramp', referenceId],
-    queryFn: () => api.get(`/offramp/status/${referenceId}`).then(r => r.data),
+    queryFn: () => api.offramp.getStatus(referenceId!).then(r => r.data),
     enabled: !!referenceId,
     refetchInterval: 5_000,
   });

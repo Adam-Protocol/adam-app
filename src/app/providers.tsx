@@ -3,10 +3,8 @@
 import { HeroUIProvider } from '@heroui/react';
 import { ThemeProvider } from 'next-themes';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { StarknetConfig, publicProvider } from '@starknet-react/core';
+import { StarknetConfig, publicProvider, argent, braavos } from '@starknet-react/core';
 import { sepolia } from '@starknet-react/chains';
-import { InjectedConnector } from 'starknetkit/injected';
-import { WebWalletConnector } from 'starknetkit/webwallet';
 import { Toaster } from 'sonner';
 
 const queryClient = new QueryClient({
@@ -15,19 +13,14 @@ const queryClient = new QueryClient({
   },
 });
 
-const connectors = [
-  new InjectedConnector({ options: { id: 'argentX', name: 'Argent X' } }),
-  new InjectedConnector({ options: { id: 'braavos', name: 'Braavos' } }),
-  new WebWalletConnector({ url: 'https://web.argent.xyz' }),
-];
-
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <StarknetConfig
         chains={[sepolia]}
         provider={publicProvider()}
-        connectors={connectors}
+        connectors={[argent(), braavos()]}
+        autoConnect
       >
         <HeroUIProvider>
           <ThemeProvider attribute="class" defaultTheme="dark" forcedTheme="dark">
