@@ -11,6 +11,10 @@ import axios from 'axios';
 import { hash } from 'starknet';
 import { WalletGuard } from '@/components/auth/WalletGuard';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { generateTransactionId } from '@/lib/utils';
+import { useTokenApprove } from '@/hooks/useTokenApprove';
+import { useBuyToken } from '@/hooks/useBuyToken';
+import { useBuyRate } from '@/hooks/useBuyRate';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 
@@ -28,7 +32,7 @@ export default function BuyPage() {
 
     return (
         <WalletGuard>
-            <BuyPageContent 
+            <BuyPageContent
                 address={address}
                 isConnected={isConnected}
                 register={register}
@@ -43,39 +47,82 @@ export default function BuyPage() {
 
 function BuyPageContent({ address, isConnected, register, handleSubmit, watch, errors, tokenOut }: any) {
     const [txSuccess, setTxSuccess] = useState(false);
+    const { approveUSDC, isApproving } = useTokenApprove();
+    const { executeBuy, isExecuting } = useBuyToken();
+    
+    // Watch amount input for real-time calculation
+    const amountIn = watch('amount_in');
+    const { rate, feeBps, outputAmount, isLoading: isLoadingRate } = useBuyRate(tokenOut, amountIn);
 
     const mutation = useMutation({
         mutationFn: async (data: BuyForm) => {
             setTxSuccess(false);
-            // Generate commitment client-side — amount never sent to backend
-            const secret = BigInt(Math.floor(Math.random() * 1e15));
-            const amountFelt = BigInt(data.amount_in);
-            const commitment = hash.computePedersenHash(
-                '0x' + amountFelt.toString(16),
-                '0x' + secret.toString(16),
-            );
+            
+            try {
+                // Calculate amount in USDC (6 decimals)
+                const amountInWei = BigInt(Math.floor(parseFloat(data.amount_in) * 1e6));
+                
+                // Step 1: Check and approve USDC spend if needed
+                toast.info('Checking USDC allowance...', { duration: 1000 });
+                const approveTxHash = await approveUSDC(amountInWei);
+                console.log("Approval txHash", approveTxHash);    
+                        
+                if (approveTxHash) {
+                    // Approval was needed, executed, and confirmed
+                    toast.success('USDC approved and confirmed!', { description: `Tx: ${approveTxHash.slice(0, 10)}...` });
+                } else {
+                    // Sufficient allowance already exists
+                    toast.info('Sufficient USDC allowance detected', { description: 'Proceeding with buy...' });
+                }
+                
+                // Step 2: Generate commitment client-side
+                const secret = BigInt(Math.floor(Math.random() * 1e15));
+                const amountFelt = BigInt(data.amount_in);
+                const commitment = hash.computePedersenHash(
+                    '0x' + amountFelt.toString(16),
+                    '0x' + secret.toString(16),
+                );
 
-            // Store secret locally (user must save this)
-            const secretKey = `adam_secret_${commitment}`;
-            sessionStorage.setItem(secretKey, secret.toString());
+                // Store secret locally (user must save this)
+                const secretKey = `adam_secret_${commitment}`;
+                sessionStorage.setItem(secretKey, secret.toString());
 
-            return axios.post(`${API}/token/buy`, {
-                wallet: address,
-                amount_in: (BigInt(data.amount_in) * BigInt(1e6)).toString(), // USDC 6 decimals
-                token_out: data.token_out,
-                commitment,
-            }).then(r => ({ ...r.data, commitment, secret: secret.toString() }));
+                // Step 3: Execute buy transaction from user's wallet
+                toast.info('Executing buy transaction...', { duration: 1000 });
+                const buyTxHash = await executeBuy(amountInWei, data.token_out, commitment);
+                console.log("Buy txHash", buyTxHash);
+                
+                toast.success('Buy transaction confirmed!', { description: `Tx: ${buyTxHash.slice(0, 10)}...` });
+
+                // Step 4: Notify backend to track the transaction
+                const transactionId = generateTransactionId('buy');
+                toast.info('Recording transaction...', { duration: 1000 });
+                
+                return axios.post(`${API}/token/buy`, {
+                    wallet: address,
+                    amount_in: amountInWei.toString(),
+                    token_out: data.token_out,
+                    commitment,
+                    transactionId,
+                    tx_hash: buyTxHash, // Include the transaction hash
+                }).then(r => ({ ...r.data, commitment, secret: secret.toString(), transactionId, tx_hash: buyTxHash }));
+            } catch (error: any) {
+                console.error('Buy mutation error:', error);
+                throw error;
+            }
         },
         onSuccess: (data) => {
             setTxSuccess(true);
             toast.success('Buy order submitted!', {
-                description: `Job ID: ${data.job_id} — transaction processing.`,
+                description: `Transaction ID: ${data.transaction_id} — processing.`,
                 duration: 5000,
             });
         },
         onError: (err: any) => {
             setTxSuccess(false);
-            toast.error('Buy failed', { description: err?.response?.data?.message ?? err.message });
+            console.error('Buy error:', err);
+            const errorMessage = err?.response?.data?.message || err?.message || 'Unknown error occurred';
+            toast.error('Buy failed', { description: errorMessage });
         },
     });
 
@@ -94,7 +141,7 @@ function BuyPageContent({ address, isConnected, register, handleSubmit, watch, e
                 </div>
 
                 {/* Form */}
-                <form onSubmit={handleSubmit(d => mutation.mutate(d))} className="space-y-5">
+                <form onSubmit={handleSubmit((d: BuyForm) => mutation.mutate(d))} className="space-y-5">
                     {/* Token select */}
                     <div className="gradient-border rounded-2xl p-5 space-y-4">
                         <label className="block text-sm font-medium text-white/70 mb-2">Receive Token</label>
@@ -103,8 +150,8 @@ function BuyPageContent({ address, isConnected, register, handleSubmit, watch, e
                                 <label
                                     key={t}
                                     className={`relative flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-all ${tokenOut === t
-                                            ? 'border-brand-500 bg-brand-500/10'
-                                            : 'border-white/10 bg-white/3 hover:border-white/20'
+                                        ? 'border-brand-500 bg-brand-500/10'
+                                        : 'border-white/10 bg-white/3 hover:border-white/20'
                                         }`}
                                 >
                                     <input type="radio" value={t} {...register('token_out')} className="sr-only" />
@@ -138,6 +185,36 @@ function BuyPageContent({ address, isConnected, register, handleSubmit, watch, e
                                 <p className="text-accent-red text-xs mt-1">{errors.amount_in.message}</p>
                             )}
                         </div>
+
+                        {/* Output Amount Display */}
+                        {amountIn && parseFloat(amountIn) > 0 && (
+                            <div className="pt-3 border-t border-white/10 space-y-2">
+                                <div className="flex items-center justify-between text-sm">
+                                    <span className="text-white/50">You will receive</span>
+                                    {isLoadingRate ? (
+                                        <LoadingSpinner size="sm" />
+                                    ) : (
+                                        <span className="text-white font-bold text-lg">
+                                            {outputAmount} {tokenOut.toUpperCase()}
+                                        </span>
+                                    )}
+                                </div>
+                                {rate !== null && (
+                                    <div className="flex items-center justify-between text-xs">
+                                        <span className="text-white/40">Exchange rate</span>
+                                        <span className="text-white/60">
+                                            1 USDC = {rate.toFixed(6)} {tokenOut.toUpperCase()}
+                                        </span>
+                                    </div>
+                                )}
+                                {feeBps > 0 && (
+                                    <div className="flex items-center justify-between text-xs">
+                                        <span className="text-white/40">Fee</span>
+                                        <span className="text-white/60">{(feeBps / 100).toFixed(2)}%</span>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
 
                     {/* Privacy info */}
@@ -152,13 +229,15 @@ function BuyPageContent({ address, isConnected, register, handleSubmit, watch, e
 
                     <button
                         type="submit"
-                        disabled={!isConnected || mutation.isPending}
+                        disabled={!isConnected || mutation.isPending || isApproving || isExecuting}
                         className="btn-neon w-full py-3.5 sm:py-4 rounded-xl sm:rounded-2xl bg-gradient-to-r from-brand-500 to-accent-cyan text-white font-bold text-base sm:text-lg shadow-lg shadow-brand-500/30 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-brand-500/50 transition-all active:scale-98 flex items-center justify-center gap-2"
                     >
-                        {mutation.isPending ? (
+                        {mutation.isPending || isApproving || isExecuting ? (
                             <>
                                 <LoadingSpinner size="sm" className="text-white" />
-                                <span>Processing...</span>
+                                <span>
+                                    {isApproving ? 'Approving...' : isExecuting ? 'Executing...' : 'Processing...'}
+                                </span>
                             </>
                         ) : txSuccess ? (
                             <>

@@ -11,6 +11,7 @@ import { hash } from 'starknet';
 import { WalletGuard } from '@/components/auth/WalletGuard';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useState } from 'react';
+import { generateTransactionId } from '@/lib/utils';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 
@@ -65,6 +66,9 @@ function SwapPageContent({ address, isConnected, register, handleSubmit, watch, 
       const amountWei = (BigInt(Math.floor(parseFloat(data.amount_in) * 1e18))).toString();
       const minOut = (BigInt(Math.floor(estimatedOut * 0.99 * 1e18))).toString();
 
+      // Generate custom transaction ID
+      const transactionId = generateTransactionId('swap');
+
       sessionStorage.setItem(`adam_secret_${commitment}`, secret.toString());
 
       return axios.post(`${API}/swap`, {
@@ -74,11 +78,12 @@ function SwapPageContent({ address, isConnected, register, handleSubmit, watch, 
         token_out: tokenOut,
         min_amount_out: minOut,
         commitment,
-      }).then(r => ({ ...r.data, commitment }));
+        transactionId,
+      }).then(r => ({ ...r.data, commitment, transactionId }));
     },
     onSuccess: (data) => {
       setTxSuccess(true);
-      toast.success('Swap submitted!', { description: `Job: ${data.job_id}`, duration: 5000 });
+      toast.success('Swap submitted!', { description: `Transaction ID: ${data.transaction_id}`, duration: 5000 });
     },
     onError: (err: any) => {
       setTxSuccess(false);

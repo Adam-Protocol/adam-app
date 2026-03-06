@@ -118,13 +118,23 @@ function DashboardPageContent({ address, isConnected }: { address: string | unde
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          label="USDC Balance"
+          value={
+            balancesLoading ? '...' :
+            balancesError ? '$0.00' :
+            balances ? `$${balances.balances.usdc.formatted}` : '$0.00'
+          }
+          icon={DollarSign}
+          color="bg-gradient-to-br from-blue-500 to-blue-600"
+        />
         <StatCard
           label="ADUSD Balance"
           value={
             balancesLoading ? '...' :
             balancesError ? 'Error' :
-            balances ? `$${balances.balances.adusd.formatted}` : '—'
+            balances ? `${balances.balances.adusd.formatted}` : '—'
           }
           icon={DollarSign}
           color="bg-gradient-to-br from-accent-cyan to-brand-500"
