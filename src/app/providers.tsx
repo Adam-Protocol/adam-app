@@ -3,9 +3,10 @@
 import { HeroUIProvider } from '@heroui/react';
 import { ThemeProvider } from 'next-themes';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { StarknetConfig, publicProvider, argent, braavos } from '@starknet-react/core';
-import { sepolia } from '@starknet-react/chains';
+import { StarknetConfig, publicProvider, voyager, Connector } from '@starknet-react/core';
+import { sepolia, mainnet } from '@starknet-react/chains';
 import { Toaster } from 'sonner';
+import { InjectedConnector } from 'starknetkit/injected';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -14,12 +15,22 @@ const queryClient = new QueryClient({
 });
 
 export function Providers({ children }: { children: React.ReactNode }) {
+  const connectors = [
+    new InjectedConnector({
+      options: { id: 'argentX', name: 'Argent X' },
+    }),
+    new InjectedConnector({
+      options: { id: 'braavos', name: 'Braavos' },
+    }),
+  ];
+
   return (
     <QueryClientProvider client={queryClient}>
       <StarknetConfig
-        chains={[sepolia]}
+        chains={[sepolia, mainnet]}
         provider={publicProvider()}
-        connectors={[argent(), braavos()]}
+        connectors={connectors as Connector[]}
+        explorer={voyager}
         autoConnect
       >
         <HeroUIProvider>
