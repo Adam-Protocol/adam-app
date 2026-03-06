@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Banks API</title>
+</head>
+<body>
+    <h1>Test Banks API</h1>
+    <button onclick="fetchBanks()">Fetch Banks</button>
+    <div id="result"></div>
+
+    <script>
+        async function fetchBanks() {
+            try {
+                const response = await fetch('http://localhost:4000/offramp/banks/NG');
+                const banks = await response.json();
+                document.getElementById('result').innerHTML = `
+                    <h2>Found ${banks.length} banks</h2>
+                    <ul>
+                        ${banks.slice(0, 10).map(bank => `<li>${bank.name} (${bank.code})</li>`).join('')}
+                    </ul>
+                `;
+            } catch (error) {
+                document.getElementById('result').innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

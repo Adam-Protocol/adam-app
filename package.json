@@ -16,7 +16,7 @@
     "@heroui/react": "^2.8.9",
     "@heroui/theme": "^2.4.22",
     "framer-motion": "^12.35.0",
-    "starknet": "^6.11.0",
+    "starknet": "^9.2.1",
     "starknetkit": "^2.3.1",
     "@starknet-react/core": "^3.3.0",
     "@starknet-react/chains": "^0.1.7",
