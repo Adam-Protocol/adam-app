@@ -5,9 +5,12 @@ import { useAccount } from '@starknet-react/core';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
-import { RefreshCw, ArrowLeftRight, Info } from 'lucide-react';
+import { RefreshCw, ArrowLeftRight, Info, CheckCircle2 } from 'lucide-react';
 import axios from 'axios';
 import { hash } from 'starknet';
+import { WalletGuard } from '@/components/auth/WalletGuard';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { useState } from 'react';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 
@@ -22,11 +25,27 @@ export default function SwapPage() {
     defaultValues: { token_in: 'adusd', amount_in: '' },
   });
 
+  return (
+    <WalletGuard>
+      <SwapPageContent 
+        address={address}
+        isConnected={isConnected}
+        register={register}
+        handleSubmit={handleSubmit}
+        watch={watch}
+        setValue={setValue}
+      />
+    </WalletGuard>
+  );
+}
+
+function SwapPageContent({ address, isConnected, register, handleSubmit, watch, setValue }: any) {
+  const [txSuccess, setTxSuccess] = useState(false);
   const tokenIn = watch('token_in');
   const tokenOut = tokenIn === 'adusd' ? 'adngn' : 'adusd';
   const amountIn = parseFloat(watch('amount_in') || '0');
 
-  const { data: rateData } = useQuery({
+  const { data: rateData, isLoading: rateLoading } = useQuery({
     queryKey: ['rate'],
     queryFn: () => axios.get(`${API}/swap/rate`).then(r => r.data),
     refetchInterval: 30_000,
@@ -39,9 +58,10 @@ export default function SwapPage() {
 
   const mutation = useMutation({
     mutationFn: async (data: SwapForm) => {
+      setTxSuccess(false);
       const secret = BigInt(Math.floor(Math.random() * 1e15));
       const amountFelt = BigInt(data.amount_in);
-      const commitment = hash.computePedersenHash(amountFelt.toString(16), secret.toString(16));
+      const commitment = hash.computePedersenHash('0x' + amountFelt.toString(16), '0x' + secret.toString(16));
       const amountWei = (BigInt(Math.floor(parseFloat(data.amount_in) * 1e18))).toString();
       const minOut = (BigInt(Math.floor(estimatedOut * 0.99 * 1e18))).toString();
 
@@ -56,8 +76,14 @@ export default function SwapPage() {
         commitment,
       }).then(r => ({ ...r.data, commitment }));
     },
-    onSuccess: (data) => toast.success('Swap submitted!', { description: `Job: ${data.job_id}` }),
-    onError: (err: any) => toast.error('Swap failed', { description: err?.response?.data?.message ?? err.message }),
+    onSuccess: (data) => {
+      setTxSuccess(true);
+      toast.success('Swap submitted!', { description: `Job: ${data.job_id}`, duration: 5000 });
+    },
+    onError: (err: any) => {
+      setTxSuccess(false);
+      toast.error('Swap failed', { description: err?.response?.data?.message ?? err.message });
+    },
   });
 
   return (
@@ -74,7 +100,12 @@ export default function SwapPage() {
         </div>
 
         {/* Rate display */}
-        {rate > 0 && (
+        {rateLoading ? (
+          <div className="gradient-border rounded-xl p-4 mb-5 flex items-center justify-center">
+            <LoadingSpinner size="sm" className="text-brand-400 mr-2" />
+            <span className="text-white/50 text-sm">Loading rate...</span>
+          </div>
+        ) : rate > 0 ? (
           <div className="gradient-border rounded-xl p-4 mb-5 flex items-center justify-between">
             <div>
               <p className="text-xs text-white/40">Current Rate</p>
@@ -85,9 +116,13 @@ export default function SwapPage() {
               <p className="text-accent-green mt-0.5">Updated 5m ago</p>
             </div>
           </div>
+        ) : (
+          <div className="gradient-border rounded-xl p-4 mb-5 flex items-center justify-center">
+            <span className="text-white/40 text-sm">Rate unavailable</span>
+          </div>
         )}
 
-        <form onSubmit={handleSubmit(d => mutation.mutate(d))} className="space-y-4">
+        <form onSubmit={handleSubmit((d: SwapForm) => mutation.mutate(d))} className="space-y-4">
           {/* From */}
           <div className="gradient-border rounded-2xl p-5 space-y-3">
             <label className="block text-sm text-white/50">You Pay</label>
@@ -149,9 +184,23 @@ export default function SwapPage() {
           <button
             type="submit"
             disabled={!isConnected || mutation.isPending || !watch('amount_in')}
-            className="btn-neon w-full py-3.5 sm:py-4 rounded-xl sm:rounded-2xl bg-gradient-to-r from-accent-cyan to-accent-purple text-white font-bold text-base sm:text-lg shadow-lg shadow-accent-cyan/30 disabled:opacity-50 transition-all active:scale-98"
+            className="btn-neon w-full py-3.5 sm:py-4 rounded-xl sm:rounded-2xl bg-gradient-to-r from-accent-cyan to-accent-purple text-white font-bold text-base sm:text-lg shadow-lg shadow-accent-cyan/30 disabled:opacity-50 transition-all active:scale-98 flex items-center justify-center gap-2"
           >
-            {mutation.isPending ? 'Processing...' : !isConnected ? 'Connect Wallet First' : `Swap ${tokenIn.toUpperCase()} → ${tokenOut.toUpperCase()}`}
+            {mutation.isPending ? (
+              <>
+                <LoadingSpinner size="sm" className="text-white" />
+                <span>Processing...</span>
+              </>
+            ) : txSuccess ? (
+              <>
+                <CheckCircle2 size={18} />
+                <span>Success!</span>
+              </>
+            ) : !isConnected ? (
+              'Connect Wallet First'
+            ) : (
+              `Swap ${tokenIn.toUpperCase()} → ${tokenOut.toUpperCase()}`
+            )}
           </button>
         </form>
       </motion.div>

@@ -7,6 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Activity, ChevronDown, Filter, ExternalLink, X } from 'lucide-react';
 import axios from 'axios';
 import { clsx } from 'clsx';
+import { WalletGuard } from '@/components/auth/WalletGuard';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 
@@ -170,6 +171,23 @@ export default function ActivityPage() {
   const [filter, setFilter] = useState('all');
   const [selected, setSelected] = useState<any>(null);
 
+  return (
+    <WalletGuard>
+      <ActivityPageContent 
+        address={address}
+        isConnected={isConnected}
+        page={page}
+        setPage={setPage}
+        filter={filter}
+        setFilter={setFilter}
+        selected={selected}
+        setSelected={setSelected}
+      />
+    </WalletGuard>
+  );
+}
+
+function ActivityPageContent({ address, isConnected, page, setPage, filter, setFilter, selected, setSelected }: any) {
   const { data, isLoading } = useQuery({
     queryKey: ['activity', address, page, filter],
     queryFn: () => axios.get(`${API}/activity/${address}`, {

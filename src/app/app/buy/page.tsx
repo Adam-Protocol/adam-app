@@ -6,9 +6,11 @@ import { useAccount } from '@starknet-react/core';
 import { useMutation } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
-import { ArrowDownRight, Info } from 'lucide-react';
+import { ArrowDownRight, Info, CheckCircle2 } from 'lucide-react';
 import axios from 'axios';
 import { hash } from 'starknet';
+import { WalletGuard } from '@/components/auth/WalletGuard';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 
@@ -24,14 +26,33 @@ export default function BuyPage() {
     });
     const tokenOut = watch('token_out');
 
+    return (
+        <WalletGuard>
+            <BuyPageContent 
+                address={address}
+                isConnected={isConnected}
+                register={register}
+                handleSubmit={handleSubmit}
+                watch={watch}
+                errors={errors}
+                tokenOut={tokenOut}
+            />
+        </WalletGuard>
+    );
+}
+
+function BuyPageContent({ address, isConnected, register, handleSubmit, watch, errors, tokenOut }: any) {
+    const [txSuccess, setTxSuccess] = useState(false);
+
     const mutation = useMutation({
         mutationFn: async (data: BuyForm) => {
+            setTxSuccess(false);
             // Generate commitment client-side — amount never sent to backend
             const secret = BigInt(Math.floor(Math.random() * 1e15));
             const amountFelt = BigInt(data.amount_in);
             const commitment = hash.computePedersenHash(
-                amountFelt.toString(16),
-                secret.toString(16),
+                '0x' + amountFelt.toString(16),
+                '0x' + secret.toString(16),
             );
 
             // Store secret locally (user must save this)
@@ -46,11 +67,14 @@ export default function BuyPage() {
             }).then(r => ({ ...r.data, commitment, secret: secret.toString() }));
         },
         onSuccess: (data) => {
+            setTxSuccess(true);
             toast.success('Buy order submitted!', {
                 description: `Job ID: ${data.job_id} — transaction processing.`,
+                duration: 5000,
             });
         },
         onError: (err: any) => {
+            setTxSuccess(false);
             toast.error('Buy failed', { description: err?.response?.data?.message ?? err.message });
         },
     });
@@ -129,9 +153,23 @@ export default function BuyPage() {
                     <button
                         type="submit"
                         disabled={!isConnected || mutation.isPending}
-                        className="btn-neon w-full py-3.5 sm:py-4 rounded-xl sm:rounded-2xl bg-gradient-to-r from-brand-500 to-accent-cyan text-white font-bold text-base sm:text-lg shadow-lg shadow-brand-500/30 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-brand-500/50 transition-all active:scale-98"
+                        className="btn-neon w-full py-3.5 sm:py-4 rounded-xl sm:rounded-2xl bg-gradient-to-r from-brand-500 to-accent-cyan text-white font-bold text-base sm:text-lg shadow-lg shadow-brand-500/30 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-brand-500/50 transition-all active:scale-98 flex items-center justify-center gap-2"
                     >
-                        {mutation.isPending ? 'Processing...' : !isConnected ? 'Connect Wallet First' : `Buy ${tokenOut.toUpperCase()}`}
+                        {mutation.isPending ? (
+                            <>
+                                <LoadingSpinner size="sm" className="text-white" />
+                                <span>Processing...</span>
+                            </>
+                        ) : txSuccess ? (
+                            <>
+                                <CheckCircle2 size={18} />
+                                <span>Success!</span>
+                            </>
+                        ) : !isConnected ? (
+                            'Connect Wallet First'
+                        ) : (
+                            `Buy ${tokenOut.toUpperCase()}`
+                        )}
                     </button>
                 </form>
             </motion.div>

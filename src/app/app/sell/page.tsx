@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { ArrowUpRight, Info } from 'lucide-react';
 import axios from 'axios';
 import { hash } from 'starknet';
+import { WalletGuard } from '@/components/auth/WalletGuard';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 
@@ -27,14 +28,29 @@ export default function SellPage() {
     defaultValues: { token_in: 'adngn', currency: 'NGN' },
   });
 
+  return (
+    <WalletGuard>
+      <SellPageContent 
+        address={address}
+        isConnected={isConnected}
+        register={register}
+        handleSubmit={handleSubmit}
+        watch={watch}
+        errors={errors}
+      />
+    </WalletGuard>
+  );
+}
+
+function SellPageContent({ address, isConnected, register, handleSubmit, watch, errors }: any) {
   const mutation = useMutation({
     mutationFn: async (data: SellForm) => {
       // Derive nullifier from secret
       const secret = BigInt(data.secret);
       const nullifierKey = BigInt(Math.floor(Math.random() * 1e15));
       const nullifier = hash.computePedersenHash(
-        secret.toString(16),
-        nullifierKey.toString(16),
+        '0x' + secret.toString(16),
+        '0x' + nullifierKey.toString(16),
       );
 
       return axios.post(`${API}/token/sell`, {
