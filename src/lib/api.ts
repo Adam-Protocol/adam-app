@@ -63,6 +63,15 @@ export const api = {
       bank_account: string;
       bank_code: string;
     }) => apiClient.post('/token/sell', data),
+
+    getBalances: (wallet: string) => 
+      apiClient.get<{
+        wallet: string;
+        balances: {
+          adusd: { raw: string; formatted: string; decimals: number };
+          adngn: { raw: string; formatted: string; decimals: number };
+        };
+      }>(`/token/balances/${wallet}`),
   },
 
   // Swap endpoints

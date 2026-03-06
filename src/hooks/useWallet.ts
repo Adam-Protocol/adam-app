@@ -1,34 +1,32 @@
 import { useCallback } from 'react';
-import { useAccount, useDisconnect } from '@starknet-react/core';
-import { connect } from 'starknetkit';
-import { InjectedConnector } from 'starknetkit/injected';
-import { WebWalletConnector } from 'starknetkit/webwallet';
+import { useAccount, useConnect, useDisconnect, Connector } from '@starknet-react/core';
+import { useStarknetkitConnectModal, StarknetkitConnector } from 'starknetkit';
 
 /**
- * Wrapper around starknetkit's connect() with recommended connectors.
+ * Wrapper around starknetkit modal with @starknet-react/core integration.
  * Returns address, shortAddress, isConnected, connectWallet, disconnect.
  */
 export function useWallet() {
   const { address, isConnected, status } = useAccount();
+  const { connect, connectors } = useConnect();
   const { disconnect } = useDisconnect();
+  const { starknetkitConnectModal } = useStarknetkitConnectModal({
+    connectors: connectors as StarknetkitConnector[],
+  });
 
   const connectWallet = useCallback(async () => {
     try {
-      const { wallet } = await connect({
-        modalMode: 'alwaysAsk',
-        modalTheme: 'dark',
-        connectors: [
-          new InjectedConnector({ options: { id: 'argentX', name: 'Argent X' } }),
-          new InjectedConnector({ options: { id: 'braavos', name: 'Braavos' } }),
-          new WebWalletConnector({ url: 'https://web.argent.xyz' }),
-        ],
-      });
-      return wallet;
+      const { connector } = await starknetkitConnectModal();
+      if (!connector) {
+        return null;
+      }
+      await connect({ connector: connector as Connector });
+      return connector;
     } catch (err) {
       console.error('Wallet connect failed:', err);
       return null;
     }
-  }, []);
+  }, [starknetkitConnectModal, connect]);
 
   const shortAddress = address
     ? `${address.slice(0, 6)}...${address.slice(-4)}`
