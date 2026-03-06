@@ -23,13 +23,13 @@ export const TOKENS = {
   ADUSD: {
     symbol: 'ADUSD',
     name: 'Adam USD',
-    decimals: 6,
+    decimals: 18,
     address: CONTRACTS.ADUSD,
   },
   ADNGN: {
     symbol: 'ADNGN',
     name: 'Adam NGN',
-    decimals: 2,
+    decimals: 18,
     address: CONTRACTS.ADNGN,
   },
   USDC: {

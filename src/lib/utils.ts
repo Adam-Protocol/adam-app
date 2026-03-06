@@ -123,3 +123,14 @@ export async function copyToClipboard(text: string): Promise<boolean> {
 export function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
+
+/**
+ * Generate a unique transaction ID
+ * @param type - Transaction type prefix (buy, sell, swap)
+ * @returns A unique transaction ID string
+ */
+export function generateTransactionId(type: 'buy' | 'sell' | 'swap'): string {
+  const timestamp = Date.now();
+  const randomStr = Math.random().toString(36).substring(2, 9);
+  return `${type}_${timestamp}_${randomStr}`;
+}

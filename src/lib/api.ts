@@ -51,6 +51,7 @@ export const api = {
       amount_in: string;
       token_out: 'adusd' | 'adngn';
       commitment: string;
+      transactionId?: string;
     }) => apiClient.post('/token/buy', data),
 
     sell: (data: {
@@ -62,6 +63,7 @@ export const api = {
       currency: 'NGN' | 'USD';
       bank_account: string;
       bank_code: string;
+      transactionId?: string;
     }) => apiClient.post('/token/sell', data),
 
     getBalances: (wallet: string) => 
@@ -70,6 +72,7 @@ export const api = {
         balances: {
           adusd: { raw: string; formatted: string; decimals: number };
           adngn: { raw: string; formatted: string; decimals: number };
+          usdc: { raw: string; formatted: string; decimals: number };
         };
       }>(`/token/balances/${wallet}`),
   },
@@ -83,6 +86,7 @@ export const api = {
       token_out: 'adusd' | 'adngn';
       min_amount_out: string;
       commitment: string;
+      transactionId?: string;
     }) => apiClient.post('/swap', data),
 
     getRate: () => apiClient.get<{ usd_ngn: number; updated_at: string }>('/swap/rate'),
