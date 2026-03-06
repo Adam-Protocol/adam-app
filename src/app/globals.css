@@ -149,6 +149,36 @@
            transition-all duration-200;
   }
 
+  /* Select dropdown styling */
+  select.adam-input {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: #e2e8f0;
+    cursor: pointer;
+    padding-right: 2.5rem;
+  }
+
+  select.adam-input option {
+    background-color: #0f172a;
+    color: #e2e8f0;
+    padding: 12px 16px;
+  }
+
+  select.adam-input option:checked {
+    background-color: rgba(91, 111, 243, 0.3);
+  }
+
+  select.adam-input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* Firefox specific */
+  @-moz-document url-prefix() {
+    select.adam-input option {
+      background-color: #0f172a;
+    }
+  }
+
   /* Active scale for mobile touch */
   .active\:scale-98:active {
     transform: scale(0.98);

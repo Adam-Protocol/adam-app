@@ -3,10 +3,11 @@
 import { HeroUIProvider } from '@heroui/react';
 import { ThemeProvider } from 'next-themes';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { StarknetConfig, publicProvider, voyager, Connector } from '@starknet-react/core';
+import { StarknetConfig, jsonRpcProvider, voyager, Connector } from '@starknet-react/core';
 import { sepolia, mainnet } from '@starknet-react/chains';
 import { Toaster } from 'sonner';
 import { InjectedConnector } from 'starknetkit/injected';
+import { RpcProvider, constants } from 'starknet';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -24,11 +25,22 @@ export function Providers({ children }: { children: React.ReactNode }) {
     }),
   ];
 
+  // Use custom RPC provider with v0.10 support
+  const rpcUrl = process.env.NEXT_PUBLIC_STARKNET_RPC_URL || 'https://starknet-sepolia.g.alchemy.com/starknet/version/rpc/v0_10/5QQMV6kqa3iDaH_EbNhTw';
+  
+  const provider = jsonRpcProvider({
+    rpc: () => ({
+      nodeUrl: rpcUrl,
+      // For v0.10, we need to specify the chain ID properly
+      chainId: constants.StarknetChainId.SN_SEPOLIA,
+    }),
+  });
+
   return (
     <QueryClientProvider client={queryClient}>
       <StarknetConfig
         chains={[sepolia, mainnet]}
-        provider={publicProvider()}
+        provider={provider}
         connectors={connectors as Connector[]}
         explorer={voyager}
         autoConnect
