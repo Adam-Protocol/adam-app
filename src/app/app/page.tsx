@@ -3,9 +3,12 @@
 import { motion } from 'framer-motion';
 import { useAccount } from '@starknet-react/core';
 import { useQuery } from '@tanstack/react-query';
-import { TrendingUp, ArrowDownRight, ArrowUpRight, RefreshCw, DollarSign, Coins } from 'lucide-react';
+import { TrendingUp, ArrowDownRight, ArrowUpRight, RefreshCw, DollarSign, Coins, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import axios from 'axios';
+import { WalletGuard } from '@/components/auth/WalletGuard';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { useBalances } from '@/hooks/useBalances';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 
@@ -53,18 +56,30 @@ function QuickAction({ href, icon: Icon, label, desc, color }: any) {
 export default function DashboardPage() {
   const { address, isConnected } = useAccount();
 
-  const { data: ratData } = useQuery({
+  return (
+    <WalletGuard>
+      <DashboardPageContent address={address} isConnected={isConnected} />
+    </WalletGuard>
+  );
+}
+
+function DashboardPageContent({ address, isConnected }: { address: string | undefined; isConnected: boolean | undefined }) {
+  const { data: ratData, isLoading: rateLoading, isError: rateError } = useQuery({
     queryKey: ['rate'],
     queryFn: () => axios.get(`${API}/swap/rate`).then(r => r.data),
     refetchInterval: 30_000,
+    retry: 3,
   });
 
-  const { data: activity } = useQuery({
+  const { data: balances, isLoading: balancesLoading, isError: balancesError } = useBalances(address, isConnected);
+
+  const { data: activity, isLoading: activityLoading } = useQuery({
     queryKey: ['activity', address],
     queryFn: () => address
       ? axios.get(`${API}/activity/${address}`, { params: { limit: 5 } }).then(r => r.data)
       : null,
     enabled: !!address,
+    retry: 2,
   });
 
   return (
@@ -80,9 +95,24 @@ export default function DashboardPage() {
           </p>
         </div>
         {ratData && (
-          <div className="glass px-4 py-2 rounded-xl border border-white/10 text-sm whitespace-nowrap">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="glass px-4 py-2 rounded-xl border border-white/10 text-sm whitespace-nowrap"
+          >
             <span className="text-white/40">1 USD = </span>
             <span className="font-bold text-white">₦{ratData.usd_ngn?.toFixed(2)}</span>
+          </motion.div>
+        )}
+        {rateLoading && (
+          <div className="glass px-4 py-2 rounded-xl border border-white/10">
+            <LoadingSpinner size="sm" className="text-brand-400" />
+          </div>
+        )}
+        {rateError && (
+          <div className="glass px-4 py-2 rounded-xl border border-accent-red/30 text-sm flex items-center gap-2">
+            <AlertCircle size={14} className="text-accent-red" />
+            <span className="text-white/60">Rate unavailable</span>
           </div>
         )}
       </div>
@@ -91,22 +121,30 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <StatCard
           label="ADUSD Balance"
-          value="—"
+          value={
+            balancesLoading ? '...' :
+            balancesError ? 'Error' :
+            balances ? `$${balances.balances.adusd.formatted}` : '—'
+          }
           icon={DollarSign}
           color="bg-gradient-to-br from-accent-cyan to-brand-500"
         />
         <StatCard
           label="ADNGN Balance"
-          value="—"
+          value={
+            balancesLoading ? '...' :
+            balancesError ? 'Error' :
+            balances ? `₦${balances.balances.adngn.formatted}` : '—'
+          }
           icon={Coins}
           color="bg-gradient-to-br from-accent-purple to-brand-500"
         />
         <StatCard
           label="Live Rate"
-          value={ratData ? `₦${ratData.usd_ngn?.toFixed(0)}` : '...'}
+          value={rateLoading ? '...' : rateError ? 'N/A' : ratData ? `₦${ratData.usd_ngn?.toFixed(0)}` : '...'}
           icon={TrendingUp}
           color="bg-gradient-to-br from-accent-green to-accent-cyan"
-          change="Updates every 5 min"
+          change={rateError ? 'Offline' : 'Updates every 5 min'}
         />
       </div>
 
@@ -129,7 +167,12 @@ export default function DashboardPage() {
             <Link href="/app/activity" className="text-brand-400 text-sm hover:underline">View all</Link>
           </div>
           <div className="gradient-border overflow-hidden rounded-2xl">
-            {activity?.data?.length > 0 ? (
+            {activityLoading ? (
+              <div className="py-16 text-center">
+                <LoadingSpinner size="md" className="mx-auto text-brand-400 mb-3" />
+                <p className="text-white/30 text-sm">Loading activity...</p>
+              </div>
+            ) : activity?.data?.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm min-w-[600px]">
                 <thead>
