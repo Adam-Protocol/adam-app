@@ -57,7 +57,7 @@ function TxRow({ tx, onClick }: { tx: any; onClick: () => void }) {
         <td className="px-5 py-4">
           {tx.tx_hash && (
             <a
-              href={`https://sepolia.starkscan.co/tx/${tx.tx_hash}`}
+              href={`https://sepolia.voyager.online/tx/${tx.tx_hash}`}
               target="_blank"
               rel="noopener noreferrer"
               onClick={(e) => e.stopPropagation()}
@@ -94,7 +94,7 @@ function TxRow({ tx, onClick }: { tx: any; onClick: () => void }) {
           </span>
           {tx.tx_hash && (
             <a
-              href={`https://sepolia.starkscan.co/tx/${tx.tx_hash}`}
+              href={`https://sepolia.voyager.online/tx/${tx.tx_hash}`}
               target="_blank"
               rel="noopener noreferrer"
               onClick={(e) => e.stopPropagation()}
@@ -149,12 +149,12 @@ function TxDrawer({ tx, onClose }: { tx: any; onClose: () => void }) {
               ))}
               {tx.tx_hash && (
                 <a
-                  href={`https://sepolia.starkscan.co/tx/${tx.tx_hash}`}
+                  href={`https://sepolia.voyager.online/tx/${tx.tx_hash}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 text-brand-400 hover:text-brand-300 text-sm mt-4 active:scale-98 transition-transform"
                 >
-                  <ExternalLink size={14} /> View on Starkscan
+                  <ExternalLink size={14} /> View on Explorer
                 </a>
               )}
             </div>
@@ -173,7 +173,7 @@ export default function ActivityPage() {
 
   return (
     <WalletGuard>
-      <ActivityPageContent 
+      <ActivityPageContent
         address={address}
         isConnected={isConnected}
         page={page}
