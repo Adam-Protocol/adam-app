@@ -16,6 +16,10 @@ import { CommitmentInfo } from '@/components/CommitmentInfo';
 import { useBanks } from '@/hooks/useBanks';
 import { useAccountVerification } from '@/hooks/useAccountVerification';
 import { useState, useEffect } from 'react';
+import { BankSearchDropdown } from '@/components/ui/BankSearchDropdown';
+import { useSellToken } from '@/hooks/useSellToken';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { CheckCircle2 } from 'lucide-react';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 
@@ -29,7 +33,7 @@ type SellForm = {
 
 export default function SellPage() {
   const { address, isConnected } = useAccount();
-  const { register, handleSubmit, watch, formState: { errors } } = useForm<SellForm>({
+  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<SellForm>({
     defaultValues: { token_in: 'adngn', currency: 'NGN' },
   });
 
@@ -41,22 +45,25 @@ export default function SellPage() {
         register={register}
         handleSubmit={handleSubmit}
         watch={watch}
+        setValue={setValue}
         errors={errors}
       />
     </WalletGuard>
   );
 }
 
-function SellPageContent({ address, isConnected, register, handleSubmit, watch, errors }: any) {
+function SellPageContent({ address, isConnected, register, handleSubmit, watch, errors, setValue }: any) {
   const tokenType = watch('token_in');
   const currency = watch('currency');
   const accountNumber = watch('bank_account');
   const bankCode = watch('bank_code');
   
   const [verifiedAccountName, setVerifiedAccountName] = useState<string | null>(null);
+  const [txSuccess, setTxSuccess] = useState(false);
   
   const { data: commitments = [], isLoading: loadingCommitments } = useUserCommitments(tokenType);
   const { getSecret } = useCommitment();
+  const { executeSell, isExecuting } = useSellToken();
   
   // Fetch banks based on selected currency
   const country = currency === 'NGN' ? 'NG' : 'US';
@@ -96,50 +103,79 @@ function SellPageContent({ address, isConnected, register, handleSubmit, watch, 
 
   const mutation = useMutation({
     mutationFn: async (data: SellForm) => {
-      // Find the most recent commitment for this token type
-      const availableCommitment = commitments.find(c => 
-        c.token_out.toLowerCase() === data.token_in.toLowerCase()
-      );
+      setTxSuccess(false);
+      
+      try {
+        // Find the most recent commitment for this token type
+        const availableCommitment = commitments.find(c => 
+          c.token_out.toLowerCase() === data.token_in.toLowerCase()
+        );
 
-      if (!availableCommitment) {
-        throw new Error(`No available ${data.token_in.toUpperCase()} commitment found. Please buy tokens first.`);
+        if (!availableCommitment) {
+          throw new Error(`No available ${data.token_in.toUpperCase()} commitment found. Please buy tokens first.`);
+        }
+
+        // Retrieve secret from sessionStorage
+        const secret = getSecret(availableCommitment.commitment);
+        if (!secret) {
+          throw new Error('Secret not found. You may need to buy tokens again from this device.');
+        }
+
+        // Derive nullifier from secret
+        const nullifierKey = BigInt(Math.floor(Math.random() * 1e15));
+        const nullifier = hash.computePedersenHash(
+          '0x' + secret.toString(16),
+          '0x' + nullifierKey.toString(16),
+        );
+
+        // Calculate amount in wei (18 decimals)
+        const amountInWei = BigInt(Math.floor(parseFloat(data.amount) * 1e18));
+
+        // Step 1: Execute sell transaction from user's wallet
+        toast.info('Executing sell transaction...', { duration: 1000 });
+        const sellTxHash = await executeSell(
+          data.token_in,
+          amountInWei,
+          nullifier,
+          availableCommitment.commitment
+        );
+        console.log("Sell txHash", sellTxHash);
+        
+        toast.success('Sell transaction confirmed!', { description: `Tx: ${sellTxHash.slice(0, 10)}...` });
+
+        // Step 2: Notify backend to track the transaction and initiate bank transfer
+        const transactionId = generateTransactionId('sell');
+        toast.info('Processing bank transfer...', { duration: 1000 });
+
+        return axios.post(`${API}/token/sell`, {
+          wallet: address,
+          token_in: data.token_in,
+          amount: amountInWei.toString(),
+          nullifier,
+          commitment: availableCommitment.commitment,
+          currency: data.currency,
+          bank_account: data.bank_account,
+          bank_code: data.bank_code,
+          transactionId,
+          tx_hash: sellTxHash, // Include the transaction hash
+        }).then(r => ({ ...r.data, tx_hash: sellTxHash }));
+      } catch (error: any) {
+        console.error('Sell mutation error:', error);
+        throw error;
       }
-
-      // Retrieve secret from sessionStorage
-      const secret = getSecret(availableCommitment.commitment);
-      if (!secret) {
-        throw new Error('Secret not found. You may need to buy tokens again from this device.');
-      }
-
-      // Derive nullifier from secret
-      const nullifierKey = BigInt(Math.floor(Math.random() * 1e15));
-      const nullifier = hash.computePedersenHash(
-        '0x' + secret.toString(16),
-        '0x' + nullifierKey.toString(16),
-      );
-
-      // Generate custom transaction ID
-      const transactionId = generateTransactionId('sell');
-
-      return axios.post(`${API}/token/sell`, {
-        wallet: address,
-        token_in: data.token_in,
-        amount: (BigInt(data.amount) * BigInt(1e18)).toString(), // 18 decimals
-        nullifier,
-        commitment: availableCommitment.commitment,
-        currency: data.currency,
-        bank_account: data.bank_account,
-        bank_code: data.bank_code,
-        transactionId,
-      }).then(r => r.data);
     },
     onSuccess: (data) => {
+      setTxSuccess(true);
       toast.success('Sell order submitted!', {
         description: `Transaction ID: ${data.transaction_id} — bank transfer will arrive shortly.`,
+        duration: 5000,
       });
     },
     onError: (err: any) => {
-      toast.error('Sell failed', { description: err?.response?.data?.message ?? err.message });
+      setTxSuccess(false);
+      console.error('Sell error:', err);
+      const errorMessage = err?.response?.data?.message || err?.message || 'Unknown error occurred';
+      toast.error('Sell failed', { description: errorMessage });
     },
   });
 
@@ -216,35 +252,18 @@ function SellPageContent({ address, isConnected, register, handleSubmit, watch, 
             </div>
 
             {/* Bank Selection */}
-            <div>
+            <div className="relative z-10">
               <label className="block text-sm font-medium text-white/70 mb-2">
-                Select Bank {loadingBanks && '(Loading...)'} {banks.length > 0 && `(${banks.length} banks)`}
+                Select Bank {banks.length > 0 && `(${banks.length} available)`}
               </label>
-              <select 
-                className="adam-input text-sm"
-                style={{ 
-                  colorScheme: 'dark',
-                  WebkitAppearance: 'none',
-                  MozAppearance: 'none',
-                  appearance: 'none',
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23ffffff' d='M6 9L1 4h10z'/%3E%3C/svg%3E")`,
-                  backgroundRepeat: 'no-repeat',
-                  backgroundPosition: 'right 1rem center',
-                  paddingRight: '2.5rem'
-                }}
-                {...register('bank_code', { required: 'Bank selection required' })}
+              <BankSearchDropdown
+                banks={banks}
+                value={bankCode}
+                onChange={(code) => setValue('bank_code', code, { shouldValidate: true })}
                 disabled={loadingBanks}
-              >
-                <option value="">-- Select your bank --</option>
-                {banks.map((bank) => (
-                  <option key={bank.code} value={bank.code}>
-                    {bank.name}
-                  </option>
-                ))}
-              </select>
-              {errors.bank_code && (
-                <p className="text-accent-red text-xs mt-1">{errors.bank_code.message}</p>
-              )}
+                loading={loadingBanks}
+                error={errors.bank_code?.message}
+              />
               {banksError && (
                 <p className="text-accent-red text-xs mt-1">Failed to load banks: {String(banksError)}</p>
               )}
@@ -254,7 +273,7 @@ function SellPageContent({ address, isConnected, register, handleSubmit, watch, 
             </div>
 
             {/* Account Number */}
-            <div>
+            <div className="relative z-0">
               <label className="block text-sm font-medium text-white/70 mb-2">Account Number</label>
               <input 
                 type="text" 
@@ -299,14 +318,30 @@ function SellPageContent({ address, isConnected, register, handleSubmit, watch, 
 
           <button
             type="submit"
-            disabled={!isConnected || mutation.isPending || !verifiedAccountName || commitments.length === 0}
-            className="btn-neon w-full py-3.5 sm:py-4 rounded-xl sm:rounded-2xl bg-gradient-to-r from-accent-purple to-brand-500 text-white font-bold text-base sm:text-lg shadow-lg shadow-accent-purple/30 disabled:opacity-50 transition-all active:scale-98"
+            disabled={!isConnected || mutation.isPending || isExecuting || !verifiedAccountName || commitments.length === 0}
+            className="btn-neon w-full py-3.5 sm:py-4 rounded-xl sm:rounded-2xl bg-gradient-to-r from-accent-purple to-brand-500 text-white font-bold text-base sm:text-lg shadow-lg shadow-accent-purple/30 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-accent-purple/50 transition-all active:scale-98 flex items-center justify-center gap-2"
           >
-            {mutation.isPending ? 'Processing...' : 
-             !isConnected ? 'Connect Wallet First' : 
-             commitments.length === 0 ? 'No Commitments Available' :
-             !verifiedAccountName ? 'Verify Account First' : 
-             'Sell & Offramp'}
+            {mutation.isPending || isExecuting ? (
+              <>
+                <LoadingSpinner size="sm" className="text-white" />
+                <span>
+                  {isExecuting ? 'Executing...' : 'Processing...'}
+                </span>
+              </>
+            ) : txSuccess ? (
+              <>
+                <CheckCircle2 size={18} />
+                <span>Success!</span>
+              </>
+            ) : !isConnected ? (
+              'Connect Wallet First'
+            ) : commitments.length === 0 ? (
+              'No Commitments Available'
+            ) : !verifiedAccountName ? (
+              'Verify Account First'
+            ) : (
+              'Sell & Offramp'
+            )}
           </button>
         </form>
       </motion.div>
