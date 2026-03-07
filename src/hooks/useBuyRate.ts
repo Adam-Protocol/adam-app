@@ -59,7 +59,6 @@ export function useBuyRate(tokenOut: 'adusd' | 'adngn', amountIn: string) {
         
         const contract = new Contract(SWAP_ABI, CONTRACTS.ADAM_SWAP, provider);
         
-        // Set default block identifier to 'latest' instead of 'pending'
         contract.setDefaultBlockIdentifier('latest');
         
         const tokenOutAddress = tokenOut === 'adusd' ? CONTRACTS.ADUSD : CONTRACTS.ADNGN;
