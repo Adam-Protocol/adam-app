@@ -12,6 +12,9 @@ import { WalletGuard } from '@/components/auth/WalletGuard';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useState } from 'react';
 import { generateTransactionId } from '@/lib/utils';
+import { useSwapToken } from '@/hooks/useSwapToken';
+import { useTokenApprove } from '@/hooks/useTokenApprove';
+import { CONTRACTS } from '@/lib/constants';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 
@@ -45,6 +48,8 @@ function SwapPageContent({ address, isConnected, register, handleSubmit, watch, 
   const tokenIn = watch('token_in');
   const tokenOut = tokenIn === 'adusd' ? 'adngn' : 'adusd';
   const amountIn = parseFloat(watch('amount_in') || '0');
+  const { executeSwap, isExecuting } = useSwapToken();
+  const { approveToken, isApproving } = useTokenApprove();
 
   const { data: rateData, isLoading: rateLoading } = useQuery({
     queryKey: ['rate'],
@@ -63,27 +68,49 @@ function SwapPageContent({ address, isConnected, register, handleSubmit, watch, 
       const secret = BigInt(Math.floor(Math.random() * 1e15));
       const amountFelt = BigInt(data.amount_in);
       const commitment = hash.computePedersenHash('0x' + amountFelt.toString(16), '0x' + secret.toString(16));
-      const amountWei = (BigInt(Math.floor(parseFloat(data.amount_in) * 1e18))).toString();
-      const minOut = (BigInt(Math.floor(estimatedOut * 0.99 * 1e18))).toString();
+      const amountWei = BigInt(Math.floor(parseFloat(data.amount_in) * 1e18));
+      const minOut = BigInt(Math.floor(estimatedOut * 0.99 * 1e18));
 
       // Generate custom transaction ID
       const transactionId = generateTransactionId('swap');
 
       sessionStorage.setItem(`adam_secret_${commitment}`, secret.toString());
 
+      // Step 1: Check and approve token if needed
+      const tokenInAddress = data.token_in === 'adusd' ? CONTRACTS.ADUSD : CONTRACTS.ADNGN;
+      try {
+        await approveToken(tokenInAddress, CONTRACTS.ADAM_SWAP, amountWei);
+      } catch (err: any) {
+        throw new Error(`Approval failed: ${err.message}`);
+      }
+
+      // Step 2: Execute swap on-chain (frontend signing)
+      const txHash = await executeSwap(
+        data.token_in,
+        amountWei,
+        tokenOut as 'adusd' | 'adngn',
+        minOut,
+        commitment
+      );
+
+      // Step 3: Record transaction in backend
       return axios.post(`${API}/swap`, {
         wallet: address,
         token_in: data.token_in,
-        amount_in: amountWei,
+        amount_in: amountWei.toString(),
         token_out: tokenOut,
-        min_amount_out: minOut,
+        min_amount_out: minOut.toString(),
         commitment,
         transactionId,
-      }).then(r => ({ ...r.data, commitment, transactionId }));
+        tx_hash: txHash,
+      }).then(r => ({ ...r.data, commitment, transactionId, tx_hash: txHash }));
     },
     onSuccess: (data) => {
       setTxSuccess(true);
-      toast.success('Swap submitted!', { description: `Transaction ID: ${data.transaction_id}`, duration: 5000 });
+      toast.success('Swap completed!', { 
+        description: `Transaction: ${data.tx_hash?.slice(0, 10)}...`, 
+        duration: 5000 
+      });
     },
     onError: (err: any) => {
       setTxSuccess(false);
@@ -191,10 +218,20 @@ function SwapPageContent({ address, isConnected, register, handleSubmit, watch, 
             disabled={!isConnected || mutation.isPending || !watch('amount_in')}
             className="btn-neon w-full py-3.5 sm:py-4 rounded-xl sm:rounded-2xl bg-gradient-to-r from-accent-cyan to-accent-purple text-white font-bold text-base sm:text-lg shadow-lg shadow-accent-cyan/30 disabled:opacity-50 transition-all active:scale-98 flex items-center justify-center gap-2"
           >
-            {mutation.isPending ? (
+            {isApproving ? (
               <>
                 <LoadingSpinner size="sm" className="text-white" />
-                <span>Processing...</span>
+                <span>Approving...</span>
+              </>
+            ) : isExecuting ? (
+              <>
+                <LoadingSpinner size="sm" className="text-white" />
+                <span>Swapping...</span>
+              </>
+            ) : mutation.isPending ? (
+              <>
+                <LoadingSpinner size="sm" className="text-white" />
+                <span>Recording...</span>
               </>
             ) : txSuccess ? (
               <>
