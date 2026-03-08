@@ -1,112 +1,132 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useAccount } from '@starknet-react/core';
-import { useQuery } from '@tanstack/react-query';
-import { Activity, ChevronDown, Filter, ExternalLink, X } from 'lucide-react';
-import axios from 'axios';
-import { clsx } from 'clsx';
-import { WalletGuard } from '@/components/auth/WalletGuard';
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useAccount } from "@starknet-react/core";
+import { useQuery } from "@tanstack/react-query";
+import { Activity, ExternalLink, X } from "lucide-react";
+import axios from "axios";
+import { clsx } from "clsx";
+import { WalletGuard } from "@/components/auth/WalletGuard";
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
 const STATUS_CONFIG: Record<string, { color: string; bg: string }> = {
-  completed: { color: 'text-accent-green', bg: 'bg-accent-green/15' },
-  failed: { color: 'text-accent-red', bg: 'bg-accent-red/15' },
-  pending: { color: 'text-accent-amber', bg: 'bg-accent-amber/15' },
-  processing: { color: 'text-accent-cyan', bg: 'bg-accent-cyan/15' },
+  completed: { color: "text-accent-green", bg: "bg-accent-green/15" },
+  failed: { color: "text-accent-red", bg: "bg-accent-red/15" },
+  pending: { color: "text-accent-amber", bg: "bg-accent-amber/15" },
+  processing: { color: "text-accent-cyan", bg: "bg-accent-cyan/15" },
 };
 
 const TYPE_CONFIG: Record<string, { emoji: string; label: string }> = {
-  buy: { emoji: '⬇️', label: 'Buy' },
-  sell: { emoji: '⬆️', label: 'Sell' },
-  swap: { emoji: '🔄', label: 'Swap' },
+  buy: { emoji: "⬇️", label: "Buy" },
+  sell: { emoji: "⬆️", label: "Sell" },
+  swap: { emoji: "🔄", label: "Swap" },
 };
 
-function TxRow({ tx, onClick }: { tx: any; onClick: () => void }) {
+function TxRowDesktop({ tx, onClick }: { tx: any; onClick: () => void }) {
   const status = STATUS_CONFIG[tx.status] ?? STATUS_CONFIG.pending;
-  const type = TYPE_CONFIG[tx.type] ?? { emoji: '📄', label: tx.type };
+  const type = TYPE_CONFIG[tx.type] ?? { emoji: "📄", label: tx.type };
 
   return (
-    <>
-      {/* Desktop row */}
-      <motion.tr
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        onClick={onClick}
-        className="hidden md:table-row border-b border-white/5 hover:bg-white/3 transition-colors cursor-pointer"
-      >
-        <td className="px-5 py-4">
-          <div className="flex items-center gap-2">
-            <span className="text-base">{type.emoji}</span>
-            <span className="font-medium text-white text-sm capitalize">{type.label}</span>
-          </div>
-        </td>
-        <td className="px-5 py-4 text-white/50 text-sm">
-          {tx.token_in} → {tx.token_out}
-        </td>
-        <td className="px-5 py-4">
-          <span className={`token-badge ${status.bg} ${status.color} text-xs`}>
-            {tx.status}
+    <motion.tr
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      onClick={onClick}
+      className="border-b border-white/5 hover:bg-white/3 transition-colors cursor-pointer"
+    >
+      <td className="px-5 py-4">
+        <div className="flex items-center gap-2">
+          <span className="text-base">{type.emoji}</span>
+          <span className="font-medium text-white text-sm capitalize">
+            {type.label}
           </span>
-        </td>
-        <td className="px-5 py-4 text-white/40 text-xs">
-          {new Date(tx.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-        </td>
-        <td className="px-5 py-4">
-          {tx.tx_hash && (
-            <a
-              href={`https://sepolia.voyager.online/tx/${tx.tx_hash}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
-              className="text-brand-400 hover:text-brand-300 transition-colors"
-            >
-              <ExternalLink size={14} />
-            </a>
-          )}
-        </td>
-      </motion.tr>
+        </div>
+      </td>
+      <td className="px-5 py-4 text-white/50 text-sm">
+        {tx.token_in} → {tx.token_out}
+      </td>
+      <td className="px-5 py-4">
+        <span className={`token-badge ${status.bg} ${status.color} text-xs`}>
+          {tx.status}
+        </span>
+      </td>
+      <td className="px-5 py-4 text-white/40 text-xs">
+        {new Date(tx.created_at).toLocaleDateString("en-GB", {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        })}
+      </td>
+      <td className="px-5 py-4">
+        {tx.tx_hash && (
+          <a
+            href={`https://sepolia.voyager.online/tx/${tx.tx_hash}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="text-brand-400 hover:text-brand-300 transition-colors"
+          >
+            <ExternalLink size={14} />
+          </a>
+        )}
+      </td>
+    </motion.tr>
+  );
+}
 
-      {/* Mobile card */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        onClick={onClick}
-        className="md:hidden glass-strong rounded-xl p-4 border border-white/10 hover:border-white/20 transition-all cursor-pointer mb-3"
-      >
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <span className="text-xl">{type.emoji}</span>
-            <div>
-              <p className="font-semibold text-white text-sm capitalize">{type.label}</p>
-              <p className="text-xs text-white/40">{tx.token_in} → {tx.token_out}</p>
-            </div>
+function TxCardMobile({ tx, onClick }: { tx: any; onClick: () => void }) {
+  const status = STATUS_CONFIG[tx.status] ?? STATUS_CONFIG.pending;
+  const type = TYPE_CONFIG[tx.type] ?? { emoji: "📄", label: tx.type };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      onClick={onClick}
+      className="glass-strong rounded-xl p-4 border border-white/10 hover:border-white/20 transition-all cursor-pointer"
+    >
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <span className="text-xl">{type.emoji}</span>
+          <div>
+            <p className="font-semibold text-white text-sm capitalize">
+              {type.label}
+            </p>
+            <p className="text-xs text-white/40">
+              {tx.token_in} → {tx.token_out}
+            </p>
           </div>
-          <span className={`token-badge ${status.bg} ${status.color} text-xs`}>
-            {tx.status}
-          </span>
         </div>
-        <div className="flex items-center justify-between text-xs">
-          <span className="text-white/40">
-            {new Date(tx.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
-          </span>
-          {tx.tx_hash && (
-            <a
-              href={`https://sepolia.voyager.online/tx/${tx.tx_hash}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
-              className="text-brand-400 hover:text-brand-300 transition-colors flex items-center gap-1"
-            >
-              <ExternalLink size={12} />
-              <span>View</span>
-            </a>
-          )}
-        </div>
-      </motion.div>
-    </>
+        <span className={`token-badge ${status.bg} ${status.color} text-xs`}>
+          {tx.status}
+        </span>
+      </div>
+      <div className="flex items-center justify-between text-xs">
+        <span className="text-white/40">
+          {new Date(tx.created_at).toLocaleDateString("en-GB", {
+            day: "numeric",
+            month: "short",
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
+        </span>
+        {tx.tx_hash && (
+          <a
+            href={`https://sepolia.voyager.online/tx/${tx.tx_hash}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="text-brand-400 hover:text-brand-300 transition-colors flex items-center gap-1"
+          >
+            <ExternalLink size={12} />
+            <span>View</span>
+          </a>
+        )}
+      </div>
+    </motion.div>
   );
 }
 
@@ -117,34 +137,50 @@ function TxDrawer({ tx, onClose }: { tx: any; onClose: () => void }) {
       {tx && (
         <>
           <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/60 z-40 backdrop-blur-sm"
             onClick={onClose}
           />
           <motion.div
-            initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
-            transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+            initial={{ x: "100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "100%" }}
+            transition={{ type: "spring", damping: 30, stiffness: 300 }}
             className="fixed right-0 top-0 h-full w-full sm:max-w-md glass-strong border-l border-white/10 z-50 p-5 sm:p-6 overflow-y-auto"
           >
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-base sm:text-lg font-bold text-white">Transaction Details</h2>
-              <button onClick={onClose} className="text-white/40 hover:text-white transition-colors p-2 -mr-2 active:scale-95">
+              <h2 className="text-base sm:text-lg font-bold text-white">
+                Transaction Details
+              </h2>
+              <button
+                onClick={onClose}
+                className="text-white/40 hover:text-white transition-colors p-2 -mr-2 active:scale-95"
+              >
                 <X size={20} />
               </button>
             </div>
             <div className="space-y-4">
               {[
-                ['Type', tx.type?.toUpperCase()],
-                ['Status', tx.status],
-                ['Token In', tx.token_in],
-                ['Token Out', tx.token_out],
-                ['Reference', tx.reference_id ?? '—'],
-                ['Currency', tx.currency ?? '—'],
-                ['Created', new Date(tx.created_at).toLocaleString()],
+                ["Type", tx.type?.toUpperCase()],
+                ["Status", tx.status],
+                ["Token In", tx.token_in],
+                ["Token Out", tx.token_out],
+                ["Reference", tx.reference_id ?? "—"],
+                ["Currency", tx.currency ?? "—"],
+                ["Created", new Date(tx.created_at).toLocaleString()],
               ].map(([label, value]) => (
-                <div key={label} className="flex justify-between items-center py-3 border-b border-white/5">
+                <div
+                  key={label}
+                  className="flex justify-between items-center py-3 border-b border-white/5"
+                >
                   <span className="text-white/40 text-sm">{label}</span>
-                  <span className={`text-sm font-medium ${label === 'Status' ? `${status.color}` : 'text-white'} break-all text-right ml-4`}>{value}</span>
+                  <span
+                    className={`text-sm font-medium ${label === "Status" ? `${status.color}` : "text-white"} break-all text-right ml-4`}
+                  >
+                    {value}
+                  </span>
                 </div>
               ))}
               {tx.tx_hash && (
@@ -168,7 +204,7 @@ function TxDrawer({ tx, onClose }: { tx: any; onClose: () => void }) {
 export default function ActivityPage() {
   const { address, isConnected } = useAccount();
   const [page, setPage] = useState(1);
-  const [filter, setFilter] = useState('all');
+  const [filter, setFilter] = useState("all");
   const [selected, setSelected] = useState<any>(null);
 
   return (
@@ -187,12 +223,24 @@ export default function ActivityPage() {
   );
 }
 
-function ActivityPageContent({ address, isConnected, page, setPage, filter, setFilter, selected, setSelected }: any) {
+function ActivityPageContent({
+  address,
+  isConnected,
+  page,
+  setPage,
+  filter,
+  setFilter,
+  selected,
+  setSelected,
+}: any) {
   const { data, isLoading } = useQuery({
-    queryKey: ['activity', address, page, filter],
-    queryFn: () => axios.get(`${API}/activity/${address}`, {
-      params: { page, limit: 15, type: filter },
-    }).then(r => r.data),
+    queryKey: ["activity", address, page, filter],
+    queryFn: () =>
+      axios
+        .get(`${API}/activity/${address}`, {
+          params: { page, limit: 15, type: filter },
+        })
+        .then((r) => r.data),
     enabled: !!address,
   });
 
@@ -211,15 +259,18 @@ function ActivityPageContent({ address, isConnected, page, setPage, filter, setF
 
         {/* Filter */}
         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
-          {['all', 'buy', 'sell', 'swap'].map((t) => (
+          {["all", "buy", "sell", "swap"].map((t) => (
             <button
               key={t}
-              onClick={() => { setFilter(t); setPage(1); }}
+              onClick={() => {
+                setFilter(t);
+                setPage(1);
+              }}
               className={clsx(
-                'px-3 py-1.5 rounded-lg text-xs font-medium transition-all capitalize whitespace-nowrap',
+                "px-3 py-1.5 rounded-lg text-xs font-medium transition-all capitalize whitespace-nowrap",
                 filter === t
-                  ? 'bg-brand-500/20 text-brand-400 border border-brand-500/30'
-                  : 'text-white/40 hover:text-white hover:bg-white/5'
+                  ? "bg-brand-500/20 text-brand-400 border border-brand-500/30"
+                  : "text-white/40 hover:text-white hover:bg-white/5",
               )}
             >
               {t}
@@ -244,25 +295,41 @@ function ActivityPageContent({ address, isConnected, page, setPage, filter, setF
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-white/5 text-white/30">
-                      <th className="text-left px-5 py-3.5 font-medium">Type</th>
-                      <th className="text-left px-5 py-3.5 font-medium">Tokens</th>
-                      <th className="text-left px-5 py-3.5 font-medium">Status</th>
-                      <th className="text-left px-5 py-3.5 font-medium">Date</th>
+                      <th className="text-left px-5 py-3.5 font-medium">
+                        Type
+                      </th>
+                      <th className="text-left px-5 py-3.5 font-medium">
+                        Tokens
+                      </th>
+                      <th className="text-left px-5 py-3.5 font-medium">
+                        Status
+                      </th>
+                      <th className="text-left px-5 py-3.5 font-medium">
+                        Date
+                      </th>
                       <th className="px-5 py-3.5" />
                     </tr>
                   </thead>
                   <tbody>
                     {data.data.map((tx: any) => (
-                      <TxRow key={tx.id} tx={tx} onClick={() => setSelected(tx)} />
+                      <TxRowDesktop
+                        key={tx.id}
+                        tx={tx}
+                        onClick={() => setSelected(tx)}
+                      />
                     ))}
                   </tbody>
                 </table>
               </div>
 
               {/* Mobile cards */}
-              <div className="md:hidden p-3">
+              <div className="md:hidden p-3 space-y-3">
                 {data.data.map((tx: any) => (
-                  <TxRow key={tx.id} tx={tx} onClick={() => setSelected(tx)} />
+                  <TxCardMobile
+                    key={tx.id}
+                    tx={tx}
+                    onClick={() => setSelected(tx)}
+                  />
                 ))}
               </div>
 
@@ -275,7 +342,7 @@ function ActivityPageContent({ address, isConnected, page, setPage, filter, setF
                   <div className="flex gap-2">
                     <button
                       disabled={page === 1}
-                      onClick={() => setPage(p => p - 1)}
+                      onClick={() => setPage((p: number) => p - 1)}
                       className="px-3 py-1.5 glass rounded-lg text-xs text-white/60 hover:text-white disabled:opacity-30 transition-all"
                     >
                       Prev
@@ -285,7 +352,7 @@ function ActivityPageContent({ address, isConnected, page, setPage, filter, setF
                     </span>
                     <button
                       disabled={page >= data.meta.total_pages}
-                      onClick={() => setPage(p => p + 1)}
+                      onClick={() => setPage((p: number) => p + 1)}
                       className="px-3 py-1.5 glass rounded-lg text-xs text-white/60 hover:text-white disabled:opacity-30 transition-all"
                     >
                       Next
@@ -297,7 +364,7 @@ function ActivityPageContent({ address, isConnected, page, setPage, filter, setF
           ) : (
             <div className="py-20 text-center text-white/30">
               <Activity size={36} className="mx-auto mb-3 opacity-30" />
-              <p>No {filter === 'all' ? '' : filter} transactions yet</p>
+              <p>No {filter === "all" ? "" : filter} transactions yet</p>
             </div>
           )}
         </div>

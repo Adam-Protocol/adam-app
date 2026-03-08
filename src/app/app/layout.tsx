@@ -1,5 +1,5 @@
-import { Navbar } from '@/components/layout/Navbar';
-import { ConnectionStatus } from '@/components/ui/ConnectionStatus';
+import { Navbar } from "@/components/layout/Navbar";
+import { ConnectionStatus } from "@/components/ui/ConnectionStatus";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
