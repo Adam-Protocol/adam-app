@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { Component, ReactNode } from 'react';
-import { motion } from 'framer-motion';
-import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { Component, ReactNode } from "react";
+import { motion } from "framer-motion";
+import { AlertTriangle, RefreshCw } from "lucide-react";
 
 interface Props {
   children: ReactNode;
@@ -25,7 +25,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: any) {
-    console.error('ErrorBoundary caught:', error, errorInfo);
+    console.error("ErrorBoundary caught:", error, errorInfo);
   }
 
   render() {
@@ -45,9 +45,11 @@ export class ErrorBoundary extends Component<Props, State> {
               <AlertTriangle size={32} className="text-accent-red" />
             </div>
 
-            <h2 className="text-xl font-black text-white mb-2">Something went wrong</h2>
+            <h2 className="text-xl font-black text-white mb-2">
+              Something went wrong
+            </h2>
             <p className="text-white/50 text-sm mb-6">
-              {this.state.error?.message || 'An unexpected error occurred'}
+              {this.state.error?.message || "An unexpected error occurred"}
             </p>
 
             <button

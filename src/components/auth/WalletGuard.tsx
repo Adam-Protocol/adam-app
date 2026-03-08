@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import { useEffect } from 'react';
-import { useAccount } from '@starknet-react/core';
-import { motion } from 'framer-motion';
-import { Wallet, AlertCircle } from 'lucide-react';
-import { useWallet } from '@/hooks/useWallet';
-import { toast } from 'sonner';
+import { useEffect } from "react";
+import { useAccount } from "@starknet-react/core";
+import { motion } from "framer-motion";
+import { Wallet, AlertCircle } from "lucide-react";
+import { useWallet } from "@/hooks/useWallet";
+import { toast } from "sonner";
 
 interface WalletGuardProps {
   children: React.ReactNode;
@@ -18,8 +18,8 @@ export function WalletGuard({ children, showAlert = true }: WalletGuardProps) {
 
   useEffect(() => {
     if (!isConnected && showAlert) {
-      toast.error('Wallet Not Connected', {
-        description: 'Please connect your wallet to access this page',
+      toast.error("Wallet Not Connected", {
+        description: "Please connect your wallet to access this page",
         duration: 4000,
       });
     }
@@ -34,15 +34,19 @@ export function WalletGuard({ children, showAlert = true }: WalletGuardProps) {
           className="gradient-border rounded-2xl p-8 sm:p-12 text-center"
         >
           <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-accent-red/20 to-accent-amber/20 flex items-center justify-center border border-accent-red/30">
-            <AlertCircle size={32} className="text-accent-red sm:w-10 sm:h-10" />
+            <AlertCircle
+              size={32}
+              className="text-accent-red sm:w-10 sm:h-10"
+            />
           </div>
-          
+
           <h2 className="text-xl sm:text-2xl font-black text-white mb-3">
             Wallet Not Connected
           </h2>
-          
+
           <p className="text-white/50 text-sm sm:text-base mb-6 max-w-md mx-auto">
-            You need to connect your wallet to access this page. Connect your Argent X or Braavos wallet to continue.
+            You need to connect your wallet to access this page. Connect your
+            Argent X or Braavos wallet to continue.
           </p>
 
           <motion.button

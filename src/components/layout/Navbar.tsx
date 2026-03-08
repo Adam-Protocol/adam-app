@@ -1,21 +1,21 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Wallet, Menu, X, ChevronDown } from 'lucide-react';
-import { clsx } from 'clsx';
-import { useWallet } from '@/hooks/useWallet';
-import { useEffect } from 'react';
-import Image from 'next/image';
+import { useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
+import { Wallet, Menu, X, ChevronDown } from "lucide-react";
+import { clsx } from "clsx";
+import { useWallet } from "@/hooks/useWallet";
+import { useEffect } from "react";
+import Image from "next/image";
 
 const NAV_LINKS = [
-  { label: 'Dashboard', href: '/app' },
-  { label: 'Buy', href: '/app/buy' },
-  { label: 'Sell', href: '/app/sell' },
-  { label: 'Swap', href: '/app/swap' },
-  { label: 'Activity', href: '/app/activity' },
+  { label: "Dashboard", href: "/app" },
+  { label: "Buy", href: "/app/buy" },
+  { label: "Sell", href: "/app/sell" },
+  { label: "Swap", href: "/app/swap" },
+  { label: "Activity", href: "/app/activity" },
 ];
 
 export function Navbar() {
@@ -31,12 +31,12 @@ export function Navbar() {
   // Prevent body scroll when mobile menu is open
   useEffect(() => {
     if (mobileOpen) {
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = "unset";
     }
     return () => {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = "unset";
     };
   }, [mobileOpen]);
 
@@ -67,10 +67,10 @@ export function Navbar() {
                 key={link.href}
                 href={link.href}
                 className={clsx(
-                  'px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200',
+                  "px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200",
                   pathname === link.href
-                    ? 'bg-brand-500/15 text-brand-400 border border-brand-500/20'
-                    : 'text-white/60 hover:text-white hover:bg-white/5'
+                    ? "bg-brand-500/15 text-brand-400 border border-brand-500/20"
+                    : "text-white/60 hover:text-white hover:bg-white/5",
                 )}
               >
                 {link.label}
@@ -118,7 +118,7 @@ export function Navbar() {
           {mobileOpen && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
+              animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
               className="md:hidden border-t border-white/10 px-3 pb-4 pt-2 flex flex-col gap-1 bg-[#0a0f1e]/80 backdrop-blur-xl"
             >
@@ -128,10 +128,10 @@ export function Navbar() {
                   href={link.href}
                   onClick={() => setMobileOpen(false)}
                   className={clsx(
-                    'px-4 py-3 rounded-lg text-base font-medium transition-all active:scale-98',
+                    "px-4 py-3 rounded-lg text-base font-medium transition-all active:scale-98",
                     pathname === link.href
-                      ? 'bg-brand-500/20 text-brand-400 border border-brand-500/30'
-                      : 'text-white/70 hover:text-white hover:bg-white/10'
+                      ? "bg-brand-500/20 text-brand-400 border border-brand-500/30"
+                      : "text-white/70 hover:text-white hover:bg-white/10",
                   )}
                 >
                   {link.label}

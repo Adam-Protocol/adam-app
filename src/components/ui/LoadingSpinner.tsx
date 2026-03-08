@@ -1,24 +1,27 @@
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
+import { motion } from "framer-motion";
 
 interface LoadingSpinnerProps {
-  size?: 'sm' | 'md' | 'lg';
+  size?: "sm" | "md" | "lg";
   className?: string;
 }
 
-export function LoadingSpinner({ size = 'md', className = '' }: LoadingSpinnerProps) {
+export function LoadingSpinner({
+  size = "md",
+  className = "",
+}: LoadingSpinnerProps) {
   const sizeClasses = {
-    sm: 'w-4 h-4',
-    md: 'w-8 h-8',
-    lg: 'w-12 h-12',
+    sm: "w-4 h-4",
+    md: "w-8 h-8",
+    lg: "w-12 h-12",
   };
 
   return (
     <motion.div
       className={`${sizeClasses[size]} ${className}`}
       animate={{ rotate: 360 }}
-      transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
     >
       <svg
         className="w-full h-full"
@@ -44,7 +47,11 @@ export function LoadingSpinner({ size = 'md', className = '' }: LoadingSpinnerPr
   );
 }
 
-export function LoadingOverlay({ message = 'Loading...' }: { message?: string }) {
+export function LoadingOverlay({
+  message = "Loading...",
+}: {
+  message?: string;
+}) {
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center">
       <motion.div

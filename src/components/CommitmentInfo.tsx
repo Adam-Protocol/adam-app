@@ -1,4 +1,4 @@
-import { Info } from 'lucide-react';
+import { Info } from "lucide-react";
 
 type CommitmentInfoProps = {
   commitmentCount: number;
@@ -6,8 +6,12 @@ type CommitmentInfoProps = {
   isLoading: boolean;
 };
 
-export function CommitmentInfo({ commitmentCount, tokenType, isLoading }: CommitmentInfoProps) {
-  const displayToken = tokenType?.toUpperCase() || 'TOKEN';
+export function CommitmentInfo({
+  commitmentCount,
+  tokenType,
+  isLoading,
+}: CommitmentInfoProps) {
+  const displayToken = tokenType?.toUpperCase() || "TOKEN";
 
   if (isLoading) {
     return (
@@ -23,8 +27,11 @@ export function CommitmentInfo({ commitmentCount, tokenType, isLoading }: Commit
       <div className="flex items-start gap-2 glass px-4 py-3 rounded-xl border border-yellow-500/20 text-sm">
         <Info size={14} className="text-yellow-400 mt-0.5 shrink-0" />
         <p className="text-white/70">
-          No {displayToken} commitments found. 
-          <span className="text-yellow-400"> Buy tokens first to enable selling.</span>
+          No {displayToken} commitments found.
+          <span className="text-yellow-400">
+            {" "}
+            Buy tokens first to enable selling.
+          </span>
         </p>
       </div>
     );
@@ -34,9 +41,13 @@ export function CommitmentInfo({ commitmentCount, tokenType, isLoading }: Commit
     <div className="flex items-start gap-2 glass px-4 py-3 rounded-xl border border-green-500/20 text-sm">
       <Info size={14} className="text-green-400 mt-0.5 shrink-0" />
       <p className="text-white/70">
-        ✓ You have <span className="text-green-400 font-semibold">{commitmentCount}</span> available {displayToken} commitment(s).
+        ✓ You have{" "}
+        <span className="text-green-400 font-semibold">{commitmentCount}</span>{" "}
+        available {displayToken} commitment(s).
         <br />
-        <span className="text-white/50 text-xs">You can sell any amount from your purchased balance.</span>
+        <span className="text-white/50 text-xs">
+          You can sell any amount from your purchased balance.
+        </span>
       </p>
     </div>
   );

@@ -1,19 +1,23 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Wifi, WifiOff, AlertCircle, CheckCircle2 } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
+import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Wifi, WifiOff, AlertCircle, CheckCircle2 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
 export function ConnectionStatus() {
   const [isVisible, setIsVisible] = useState(false);
 
-  const { data: health, isError, isLoading } = useQuery({
-    queryKey: ['health'],
-    queryFn: () => axios.get(`${API}/`).then(r => r.data),
+  const {
+    data: health,
+    isError,
+    isLoading,
+  } = useQuery({
+    queryKey: ["health"],
+    queryFn: () => axios.get(`${API}/`).then((r) => r.data),
     refetchInterval: 10_000,
     retry: 2,
   });
@@ -42,8 +46,8 @@ export function ConnectionStatus() {
           <div
             className={`glass-strong rounded-xl px-4 py-2.5 flex items-center gap-2 border ${
               isConnected
-                ? 'border-accent-green/30 bg-accent-green/5'
-                : 'border-accent-red/30 bg-accent-red/5'
+                ? "border-accent-green/30 bg-accent-green/5"
+                : "border-accent-red/30 bg-accent-red/5"
             }`}
           >
             {isConnected ? (
