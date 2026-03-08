@@ -1,13 +1,13 @@
-import axios, { AxiosInstance } from 'axios';
+import axios, { AxiosInstance } from "axios";
 
 // Create axios instance with base configuration
 const createApiClient = (): AxiosInstance => {
-  const baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-  
+  const baseURL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+
   const client = axios.create({
     baseURL,
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
     timeout: 30000, // 30 seconds
   });
@@ -20,7 +20,7 @@ const createApiClient = (): AxiosInstance => {
     },
     (error) => {
       return Promise.reject(error);
-    }
+    },
   );
 
   // Response interceptor
@@ -29,12 +29,12 @@ const createApiClient = (): AxiosInstance => {
     (error) => {
       // Handle common errors
       if (error.response) {
-        console.error('API Error:', error.response.data);
+        console.error("API Error:", error.response.data);
       } else if (error.request) {
-        console.error('Network Error:', error.message);
+        console.error("Network Error:", error.message);
       }
       return Promise.reject(error);
-    }
+    },
   );
 
   return client;
@@ -49,24 +49,24 @@ export const api = {
     buy: (data: {
       wallet: string;
       amount_in: string;
-      token_out: 'adusd' | 'adngn';
+      token_out: "adusd" | "adngn";
       commitment: string;
       transactionId?: string;
-    }) => apiClient.post('/token/buy', data),
+    }) => apiClient.post("/token/buy", data),
 
     sell: (data: {
       wallet: string;
-      token_in: 'adusd' | 'adngn';
+      token_in: "adusd" | "adngn";
       amount: string;
       nullifier: string;
       commitment: string;
-      currency: 'NGN' | 'USD';
+      currency: "NGN" | "USD";
       bank_account: string;
       bank_code: string;
       transactionId?: string;
-    }) => apiClient.post('/token/sell', data),
+    }) => apiClient.post("/token/sell", data),
 
-    getBalances: (wallet: string) => 
+    getBalances: (wallet: string) =>
       apiClient.get<{
         wallet: string;
         balances: {
@@ -81,15 +81,16 @@ export const api = {
   swap: {
     execute: (data: {
       wallet: string;
-      token_in: 'adusd' | 'adngn';
+      token_in: "adusd" | "adngn";
       amount_in: string;
-      token_out: 'adusd' | 'adngn';
+      token_out: "adusd" | "adngn";
       min_amount_out: string;
       commitment: string;
       transactionId?: string;
-    }) => apiClient.post('/swap', data),
+    }) => apiClient.post("/swap", data),
 
-    getRate: () => apiClient.get<{ usd_ngn: number; updated_at: string }>('/swap/rate'),
+    getRate: () =>
+      apiClient.get<{ usd_ngn: number; updated_at: string }>("/swap/rate"),
   },
 
   // Activity endpoints
@@ -99,16 +100,17 @@ export const api = {
       params?: {
         page?: number;
         limit?: number;
-        type?: 'buy' | 'sell' | 'swap' | 'all';
-      }
+        type?: "buy" | "sell" | "swap" | "all";
+      },
     ) => apiClient.get(`/activity/${wallet}`, { params }),
   },
 
   // Offramp endpoints
   offramp: {
-    getStatus: (referenceId: string) => apiClient.get(`/offramp/status/${referenceId}`),
+    getStatus: (referenceId: string) =>
+      apiClient.get(`/offramp/status/${referenceId}`),
   },
 
   // Health check
-  health: () => apiClient.get('/'),
+  health: () => apiClient.get("/"),
 };

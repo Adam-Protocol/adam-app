@@ -1,25 +1,31 @@
-import { AccountInterface, Contract, uint256, CallData, RpcProvider } from 'starknet';
+import {
+  AccountInterface,
+  Contract,
+  uint256,
+  CallData,
+  RpcProvider,
+} from "starknet";
 
 // Minimal ERC20 ABI for token operations
 const ERC20_ABI = [
   {
-    name: 'allowance',
-    type: 'function',
+    name: "allowance",
+    type: "function",
     inputs: [
-      { name: 'owner', type: 'felt' },
-      { name: 'spender', type: 'felt' },
+      { name: "owner", type: "felt" },
+      { name: "spender", type: "felt" },
     ],
-    outputs: [{ name: 'remaining', type: 'Uint256' }],
-    stateMutability: 'view',
+    outputs: [{ name: "remaining", type: "Uint256" }],
+    stateMutability: "view",
   },
   {
-    name: 'approve',
-    type: 'function',
+    name: "approve",
+    type: "function",
     inputs: [
-      { name: 'spender', type: 'felt' },
-      { name: 'amount', type: 'Uint256' },
+      { name: "spender", type: "felt" },
+      { name: "amount", type: "Uint256" },
     ],
-    outputs: [{ name: 'success', type: 'felt' }],
+    outputs: [{ name: "success", type: "felt" }],
   },
 ];
 
@@ -35,24 +41,28 @@ export async function checkTokenAllowance(
   tokenAddress: string,
   ownerAddress: string,
   spenderAddress: string,
-  account: AccountInterface
+  account: AccountInterface,
 ): Promise<bigint> {
   try {
-    const tokenContract = new Contract(ERC20_ABI, tokenAddress, account);
-    
+    const tokenContract = new Contract({ abi: ERC20_ABI, address: tokenAddress, providerOrAccount: account });
+
     // Call allowance with 'latest' block for v0.10 compatibility
-    const result: any = await tokenContract.call('allowance', [ownerAddress, spenderAddress], {
-      blockIdentifier: 'latest',
-    });
-    
+    const result: any = await tokenContract.call(
+      "allowance",
+      [ownerAddress, spenderAddress],
+      {
+        blockIdentifier: "latest",
+      },
+    );
+
     // Handle u256 response
     const allowance = result.remaining || result;
     const low = BigInt(allowance.low || allowance[0] || 0);
     const high = BigInt(allowance.high || allowance[1] || 0);
-    
+
     return low + (high << 128n);
   } catch (error) {
-    console.error('Error checking token allowance:', error);
+    console.error("Error checking token allowance:", error);
     throw error;
   }
 }
@@ -69,14 +79,14 @@ export async function approveToken(
   tokenAddress: string,
   spenderAddress: string,
   amount: bigint,
-  account: AccountInterface
+  account: AccountInterface,
 ): Promise<string> {
   const amountU256 = uint256.bnToUint256(amount);
 
   const result = await account.execute([
     {
       contractAddress: tokenAddress,
-      entrypoint: 'approve',
+      entrypoint: "approve",
       calldata: CallData.compile({
         spender: spenderAddress,
         amount: amountU256,
@@ -85,9 +95,9 @@ export async function approveToken(
   ]);
 
   // Wait for transaction to be accepted on L2
-  console.log('Waiting for approval transaction to be accepted...');
+  console.log("Waiting for approval transaction to be accepted...");
   await account.waitForTransaction(result.transaction_hash);
-  console.log('Approval transaction confirmed!');
+  console.log("Approval transaction confirmed!");
 
   return result.transaction_hash;
 }
@@ -106,14 +116,18 @@ export async function ensureTokenAllowance(
   ownerAddress: string,
   spenderAddress: string,
   amount: bigint,
-  account: AccountInterface
-): Promise<{ approved: boolean; txHash: string | null; currentAllowance: bigint }> {
+  account: AccountInterface,
+): Promise<{
+  approved: boolean;
+  txHash: string | null;
+  currentAllowance: bigint;
+}> {
   // Check current allowance
   const currentAllowance = await checkTokenAllowance(
     tokenAddress,
     ownerAddress,
     spenderAddress,
-    account
+    account,
   );
 
   // If allowance is sufficient, no need to approve
@@ -126,10 +140,17 @@ export async function ensureTokenAllowance(
     };
   }
 
-  console.log(`Insufficient allowance: ${currentAllowance} < ${amount}. Requesting approval...`);
+  console.log(
+    `Insufficient allowance: ${currentAllowance} < ${amount}. Requesting approval...`,
+  );
 
   // Approve the required amount
-  const txHash = await approveToken(tokenAddress, spenderAddress, amount, account);
+  const txHash = await approveToken(
+    tokenAddress,
+    spenderAddress,
+    amount,
+    account,
+  );
 
   return {
     approved: true,
