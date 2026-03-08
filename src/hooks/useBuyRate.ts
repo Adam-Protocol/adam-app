@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useProvider } from "@starknet-react/core";
 import { Contract } from "starknet";
 import { CONTRACTS } from "@/lib/constants";
+import { toWei } from "@/lib/utils";
 import type { Abi } from "starknet";
 
 const SWAP_ABI = [
@@ -144,8 +145,17 @@ export function useBuyRate(tokenOut: "adusd" | "adngn", amountIn: string) {
     }
 
     try {
-      // Convert USDC amount to base units (6 decimals)
-      const amountInWei = BigInt(Math.floor(parseFloat(amountIn) * 1e6));
+      // Convert USDC amount to base units (6 decimals) using toWei utility
+      // Handle decimal inputs properly
+      const amountNum = parseFloat(amountIn);
+      if (isNaN(amountNum) || amountNum <= 0) {
+        console.log("Invalid amount input");
+        setOutputAmount("0");
+        return;
+      }
+      
+      // Use toWei to properly handle decimal conversion
+      const amountInWei = toWei(amountIn, 6);
       console.log("Amount in wei:", amountInWei.toString());
 
       // Apply rate: (amount_in * rate) / RATE_PRECISION

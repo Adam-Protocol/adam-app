@@ -61,12 +61,23 @@ export function fromWei(wei: string | bigint, decimals = 6): string {
 
 /**
  * Convert token amount to wei
+ * Handles decimal inputs properly by scaling to the correct number of decimals
  */
 export function toWei(amount: string | number, decimals = 6): bigint {
   const amountStr = typeof amount === "number" ? amount.toString() : amount;
-  const [whole, fraction = ""] = amountStr.split(".");
+  
+  // Handle empty or invalid input
+  if (!amountStr || amountStr === "" || isNaN(Number(amountStr))) {
+    return BigInt(0);
+  }
+  
+  const [whole = "0", fraction = ""] = amountStr.split(".");
   const fractionPadded = fraction.padEnd(decimals, "0").slice(0, decimals);
-  return BigInt(whole + fractionPadded);
+  const combined = whole + fractionPadded;
+  
+  // Remove leading zeros to avoid issues with BigInt
+  const cleaned = combined.replace(/^0+/, "") || "0";
+  return BigInt(cleaned);
 }
 
 /**

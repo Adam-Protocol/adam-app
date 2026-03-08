@@ -11,7 +11,7 @@ import axios from "axios";
 import { hash } from "starknet";
 import { WalletGuard } from "@/components/auth/WalletGuard";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
-import { generateTransactionId } from "@/lib/utils";
+import { generateTransactionId, toWei } from "@/lib/utils";
 import { useTokenApprove } from "@/hooks/useTokenApprove";
 import { useBuyToken } from "@/hooks/useBuyToken";
 import { useBuyRate } from "@/hooks/useBuyRate";
@@ -77,10 +77,8 @@ function BuyPageContent({
       setTxSuccess(false);
 
       try {
-        // Calculate amount in USDC (6 decimals)
-        const amountInWei = BigInt(
-          Math.floor(parseFloat(data.amount_in) * 1e6),
-        );
+        // Calculate amount in USDC (6 decimals) using toWei utility
+        const amountInWei = toWei(data.amount_in, 6);
 
         // Step 1: Check and approve USDC spend if needed
         toast.info("Checking USDC allowance...", { duration: 1000 });
@@ -101,9 +99,9 @@ function BuyPageContent({
 
         // Step 2: Generate commitment client-side
         const secret = BigInt(Math.floor(Math.random() * 1e15));
-        const amountFelt = BigInt(data.amount_in);
+        // Use the wei amount for commitment (not the decimal input)
         const commitment = hash.computePedersenHash(
-          "0x" + amountFelt.toString(16),
+          "0x" + amountInWei.toString(16),
           "0x" + secret.toString(16),
         );
 

@@ -9,7 +9,7 @@ import { ArrowUpRight, Info } from "lucide-react";
 import axios from "axios";
 import { hash } from "starknet";
 import { WalletGuard } from "@/components/auth/WalletGuard";
-import { generateTransactionId } from "@/lib/utils";
+import { generateTransactionId, toWei } from "@/lib/utils";
 import { useUserCommitments } from "@/hooks/useUserCommitments";
 import { useCommitment } from "@/hooks/useCommitment";
 import { CommitmentInfo } from "@/components/CommitmentInfo";
@@ -154,8 +154,8 @@ function SellPageContent({
           "0x" + nullifierKey.toString(16),
         );
 
-        // Calculate amount in wei (18 decimals)
-        const amountInWei = BigInt(Math.floor(parseFloat(data.amount) * 1e18));
+        // Calculate amount in wei (18 decimals) using toWei utility
+        const amountInWei = toWei(data.amount, 18);
 
         // Step 1: Execute sell transaction from user's wallet
         toast.info("Executing sell transaction...", { duration: 1000 });

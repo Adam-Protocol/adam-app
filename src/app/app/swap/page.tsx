@@ -11,7 +11,7 @@ import { hash } from "starknet";
 import { WalletGuard } from "@/components/auth/WalletGuard";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { useState } from "react";
-import { generateTransactionId } from "@/lib/utils";
+import { generateTransactionId, toWei } from "@/lib/utils";
 import { useSwapToken } from "@/hooks/useSwapToken";
 import { useTokenApprove } from "@/hooks/useTokenApprove";
 import { CONTRACTS } from "@/lib/constants";
@@ -74,13 +74,16 @@ function SwapPageContent({
     mutationFn: async (data: SwapForm) => {
       setTxSuccess(false);
       const secret = BigInt(Math.floor(Math.random() * 1e15));
-      const amountFelt = BigInt(data.amount_in);
+      
+      // Convert amount to wei (18 decimals for ADUSD/ADNGN) using toWei utility
+      const amountWei = toWei(data.amount_in, 18);
       const commitment = hash.computePedersenHash(
-        "0x" + amountFelt.toString(16),
+        "0x" + amountWei.toString(16),
         "0x" + secret.toString(16),
       );
-      const amountWei = BigInt(Math.floor(parseFloat(data.amount_in) * 1e18));
-      const minOut = BigInt(Math.floor(estimatedOut * 0.99 * 1e18));
+      
+      // Calculate minimum output with slippage protection using toWei
+      const minOut = toWei((estimatedOut * 0.99).toString(), 18);
 
       // Generate custom transaction ID
       const transactionId = generateTransactionId("swap");
