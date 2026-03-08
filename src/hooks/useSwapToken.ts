@@ -1,22 +1,28 @@
-import { useState } from 'react';
-import { useAccount } from '@starknet-react/core';
-import { Contract, uint256 } from 'starknet';
-import { CONTRACTS } from '@/lib/constants';
+import { useState } from "react";
+import { useAccount } from "@starknet-react/core";
+import { Contract, uint256 } from "starknet";
+import { CONTRACTS } from "@/lib/constants";
 
 // Minimal ABI for the swap function
 const SWAP_ABI = [
   {
-    name: 'swap',
-    type: 'function',
+    name: "swap",
+    type: "function",
     inputs: [
-      { name: 'token_in', type: 'core::starknet::contract_address::ContractAddress' },
-      { name: 'amount_in', type: 'core::integer::u256' },
-      { name: 'token_out', type: 'core::starknet::contract_address::ContractAddress' },
-      { name: 'min_amount_out', type: 'core::integer::u256' },
-      { name: 'commitment', type: 'core::felt252' },
+      {
+        name: "token_in",
+        type: "core::starknet::contract_address::ContractAddress",
+      },
+      { name: "amount_in", type: "core::integer::u256" },
+      {
+        name: "token_out",
+        type: "core::starknet::contract_address::ContractAddress",
+      },
+      { name: "min_amount_out", type: "core::integer::u256" },
+      { name: "commitment", type: "core::felt252" },
     ],
     outputs: [],
-    state_mutability: 'external',
+    state_mutability: "external",
   },
 ];
 
@@ -25,25 +31,27 @@ export function useSwapToken() {
   const [isExecuting, setIsExecuting] = useState(false);
 
   const executeSwap = async (
-    tokenIn: 'adusd' | 'adngn',
+    tokenIn: "adusd" | "adngn",
     amountIn: bigint,
-    tokenOut: 'adusd' | 'adngn',
+    tokenOut: "adusd" | "adngn",
     minAmountOut: bigint,
-    commitment: string
+    commitment: string,
   ): Promise<string> => {
     if (!account) {
-      throw new Error('Wallet not connected');
+      throw new Error("Wallet not connected");
     }
 
     setIsExecuting(true);
     try {
-      const tokenInAddress = tokenIn === 'adusd' ? CONTRACTS.ADUSD : CONTRACTS.ADNGN;
-      const tokenOutAddress = tokenOut === 'adusd' ? CONTRACTS.ADUSD : CONTRACTS.ADNGN;
+      const tokenInAddress =
+        tokenIn === "adusd" ? CONTRACTS.ADUSD : CONTRACTS.ADNGN;
+      const tokenOutAddress =
+        tokenOut === "adusd" ? CONTRACTS.ADUSD : CONTRACTS.ADNGN;
       const amountInU256 = uint256.bnToUint256(amountIn);
       const minAmountOutU256 = uint256.bnToUint256(minAmountOut);
 
       // Create contract instance
-      const swapContract = new Contract(SWAP_ABI, CONTRACTS.ADAM_SWAP, account);
+      const swapContract = new Contract({ abi: SWAP_ABI, address: CONTRACTS.ADAM_SWAP, providerOrAccount: account });
 
       // Execute swap transaction
       const result = await swapContract.swap(
@@ -51,7 +59,7 @@ export function useSwapToken() {
         amountInU256,
         tokenOutAddress,
         minAmountOutU256,
-        commitment
+        commitment,
       );
 
       // Wait for transaction to be accepted

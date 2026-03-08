@@ -1,7 +1,7 @@
-import { useAccount } from '@starknet-react/core';
-import { useState } from 'react';
-import { CONTRACTS } from '@/lib/constants';
-import { ensureTokenAllowance, checkTokenAllowance } from '@/lib/token';
+import { useAccount } from "@starknet-react/core";
+import { useState } from "react";
+import { CONTRACTS } from "@/lib/constants";
+import { ensureTokenAllowance, checkTokenAllowance } from "@/lib/token";
 
 export function useTokenApprove() {
   const { account, address } = useAccount();
@@ -13,15 +13,20 @@ export function useTokenApprove() {
    */
   const checkAllowance = async (
     tokenAddress: string,
-    spenderAddress: string
+    spenderAddress: string,
   ): Promise<bigint> => {
     if (!account || !address) {
-      throw new Error('Wallet not connected');
+      throw new Error("Wallet not connected");
     }
 
     setIsCheckingAllowance(true);
     try {
-      return await checkTokenAllowance(tokenAddress, address, spenderAddress, account as any);
+      return await checkTokenAllowance(
+        tokenAddress,
+        address,
+        spenderAddress,
+        account as any,
+      );
     } finally {
       setIsCheckingAllowance(false);
     }
@@ -33,13 +38,13 @@ export function useTokenApprove() {
   const approveToken = async (
     tokenAddress: string,
     spenderAddress: string,
-    amount: string | bigint
+    amount: string | bigint,
   ): Promise<string | null> => {
     if (!account || !address) {
-      throw new Error('Wallet not connected');
+      throw new Error("Wallet not connected");
     }
 
-    const amountBigInt = typeof amount === 'string' ? BigInt(amount) : amount;
+    const amountBigInt = typeof amount === "string" ? BigInt(amount) : amount;
 
     setIsCheckingAllowance(true);
     try {
@@ -48,11 +53,13 @@ export function useTokenApprove() {
         address,
         spenderAddress,
         amountBigInt,
-        account as any
+        account as any,
       );
 
       if (!result.approved) {
-        console.log(`Sufficient allowance: ${result.currentAllowance} >= ${amountBigInt}`);
+        console.log(
+          `Sufficient allowance: ${result.currentAllowance} >= ${amountBigInt}`,
+        );
         return null; // No approval needed
       }
 
@@ -63,7 +70,9 @@ export function useTokenApprove() {
     }
   };
 
-  const approveUSDC = async (amount: string | bigint): Promise<string | null> => {
+  const approveUSDC = async (
+    amount: string | bigint,
+  ): Promise<string | null> => {
     setIsApproving(true);
     try {
       return await approveToken(CONTRACTS.USDC, CONTRACTS.ADAM_SWAP, amount);

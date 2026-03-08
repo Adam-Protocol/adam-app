@@ -1,7 +1,7 @@
-import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
+import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
 export type Bank = {
   id: number;
@@ -12,9 +12,9 @@ export type Bank = {
 /**
  * Fetch list of banks for a specific country
  */
-export function useBanks(country: string = 'NG') {
+export function useBanks(country: string = "NG") {
   return useQuery({
-    queryKey: ['banks', country],
+    queryKey: ["banks", country],
     queryFn: async () => {
       console.log(`Fetching banks for ${country}...`);
       const response = await axios.get(`${API}/offramp/banks/${country}`);

@@ -1,7 +1,7 @@
-import { useMutation } from '@tanstack/react-query';
-import axios from 'axios';
+import { useMutation } from "@tanstack/react-query";
+import axios from "axios";
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
 export type AccountVerificationResult = {
   account_number: string;
@@ -13,10 +13,13 @@ export type AccountVerificationResult = {
  */
 export function useAccountVerification() {
   return useMutation({
-    mutationFn: async (params: { account_number: string; bank_code: string }) => {
+    mutationFn: async (params: {
+      account_number: string;
+      bank_code: string;
+    }) => {
       const response = await axios.post<AccountVerificationResult>(
         `${API}/offramp/verify-account`,
-        params
+        params,
       );
       return response.data;
     },

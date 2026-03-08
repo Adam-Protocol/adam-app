@@ -1,6 +1,11 @@
-import { useCallback } from 'react';
-import { useAccount, useConnect, useDisconnect, Connector } from '@starknet-react/core';
-import { useStarknetkitConnectModal, StarknetkitConnector } from 'starknetkit';
+import { useCallback } from "react";
+import {
+  useAccount,
+  useConnect,
+  useDisconnect,
+  Connector,
+} from "@starknet-react/core";
+import { useStarknetkitConnectModal, StarknetkitConnector } from "starknetkit";
 
 /**
  * Wrapper around starknetkit modal with @starknet-react/core integration.
@@ -23,7 +28,7 @@ export function useWallet() {
       await connect({ connector: connector as Connector });
       return connector;
     } catch (err) {
-      console.error('Wallet connect failed:', err);
+      console.error("Wallet connect failed:", err);
       return null;
     }
   }, [starknetkitConnectModal, connect]);

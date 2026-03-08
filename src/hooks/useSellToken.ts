@@ -1,21 +1,24 @@
-import { useState } from 'react';
-import { useAccount } from '@starknet-react/core';
-import { Contract, uint256 } from 'starknet';
-import { CONTRACTS } from '@/lib/constants';
+import { useState } from "react";
+import { useAccount } from "@starknet-react/core";
+import { Contract, uint256 } from "starknet";
+import { CONTRACTS } from "@/lib/constants";
 
 // Minimal ABI for the sell function
 const SWAP_ABI = [
   {
-    name: 'sell',
-    type: 'function',
+    name: "sell",
+    type: "function",
     inputs: [
-      { name: 'token_in', type: 'core::starknet::contract_address::ContractAddress' },
-      { name: 'amount', type: 'core::integer::u256' },
-      { name: 'nullifier', type: 'core::felt252' },
-      { name: 'commitment', type: 'core::felt252' },
+      {
+        name: "token_in",
+        type: "core::starknet::contract_address::ContractAddress",
+      },
+      { name: "amount", type: "core::integer::u256" },
+      { name: "nullifier", type: "core::felt252" },
+      { name: "commitment", type: "core::felt252" },
     ],
     outputs: [],
-    state_mutability: 'external',
+    state_mutability: "external",
   },
 ];
 
@@ -24,29 +27,30 @@ export function useSellToken() {
   const [isExecuting, setIsExecuting] = useState(false);
 
   const executeSell = async (
-    tokenIn: 'adusd' | 'adngn',
+    tokenIn: "adusd" | "adngn",
     amount: bigint,
     nullifier: string,
-    commitment: string
+    commitment: string,
   ): Promise<string> => {
     if (!account) {
-      throw new Error('Wallet not connected');
+      throw new Error("Wallet not connected");
     }
 
     setIsExecuting(true);
     try {
-      const tokenInAddress = tokenIn === 'adusd' ? CONTRACTS.ADUSD : CONTRACTS.ADNGN;
+      const tokenInAddress =
+        tokenIn === "adusd" ? CONTRACTS.ADUSD : CONTRACTS.ADNGN;
       const amountU256 = uint256.bnToUint256(amount);
 
       // Create contract instance
-      const swapContract = new Contract(SWAP_ABI, CONTRACTS.ADAM_SWAP, account);
+      const swapContract = new Contract({ abi: SWAP_ABI, address: CONTRACTS.ADAM_SWAP, providerOrAccount: account });
 
       // Execute sell transaction
       const result = await swapContract.sell(
         tokenInAddress,
         amountU256,
         nullifier,
-        commitment
+        commitment,
       );
 
       // Wait for transaction to be accepted

@@ -1,5 +1,5 @@
-import { useCallback } from 'react';
-import { hash } from 'starknet';
+import { useCallback } from "react";
+import { hash } from "starknet";
 
 export type Commitment = {
   commitment: string;
@@ -15,8 +15,8 @@ export function useCommitment() {
   const generate = useCallback((amountWei: bigint): Commitment => {
     const secret = BigInt(Math.floor(Math.random() * Number.MAX_SAFE_INTEGER));
     const commitment = hash.computePedersenHash(
-      amountWei.toString(16).padStart(64, '0'),
-      secret.toString(16).padStart(64, '0'),
+      amountWei.toString(16).padStart(64, "0"),
+      secret.toString(16).padStart(64, "0"),
     );
     sessionStorage.setItem(`adam_secret_${commitment}`, secret.toString());
     return { commitment, secret };
@@ -32,10 +32,12 @@ export function useCommitment() {
    * nullifier = pedersen(secret_felt, nullifier_key_felt)
    */
   const deriveNullifier = useCallback((secret: bigint): string => {
-    const nullifierKey = BigInt(Math.floor(Math.random() * Number.MAX_SAFE_INTEGER));
+    const nullifierKey = BigInt(
+      Math.floor(Math.random() * Number.MAX_SAFE_INTEGER),
+    );
     return hash.computePedersenHash(
-      secret.toString(16).padStart(64, '0'),
-      nullifierKey.toString(16).padStart(64, '0'),
+      secret.toString(16).padStart(64, "0"),
+      nullifierKey.toString(16).padStart(64, "0"),
     );
   }, []);
 
