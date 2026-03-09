@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { useAccount } from "@starknet-react/core";
+import { useMultiChainWallet } from "@/hooks/useMultiChainWallet";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -61,7 +61,7 @@ function QuickAction({ href, icon: Icon, label, color }: any) {
 }
 
 export default function DashboardPage() {
-  const { address, isConnected } = useAccount();
+  const { address, isConnected } = useMultiChainWallet();
 
   return (
     <WalletGuard>

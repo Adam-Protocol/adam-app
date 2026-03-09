@@ -21,7 +21,7 @@ import {
 import { Navbar } from "@/components/layout/Navbar";
 import { AnimatedBackground } from "@/components/ui/AnimatedBackground";
 import { ScrollIndicator } from "@/components/ui/ScrollIndicator";
-import { useWallet } from "@/hooks/useWallet";
+import { useMultiChainWallet } from "@/hooks/useMultiChainWallet";
 import { useRouter } from "next/navigation";
 
 const FEATURES = [
@@ -97,7 +97,7 @@ function FeatureCard({ icon: Icon, title, desc, color, index }: any) {
 }
 
 export default function LandingPage() {
-  const { isConnected, connectWallet } = useWallet();
+  const { isConnected, connectWallet } = useMultiChainWallet();
   const router = useRouter();
   const [pendingRoute, setPendingRoute] = useState<string | null>(null);
 
