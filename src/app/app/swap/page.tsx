@@ -5,7 +5,7 @@ import { useAccount } from "@starknet-react/core";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { RefreshCw, ArrowLeftRight, Info, CheckCircle2 } from "lucide-react";
+import { RefreshCw, ArrowLeftRight, Info, CheckCircle2, Sparkles, TrendingUp } from "lucide-react";
 import axios from "axios";
 import { hash } from "starknet";
 import { WalletGuard } from "@/components/auth/WalletGuard";
@@ -193,7 +193,7 @@ function SwapPageContent({
         animate={{ opacity: 1, y: 0 }}
       >
         <div className="flex items-center gap-3 mb-6 sm:mb-8">
-          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-accent-cyan to-accent-purple flex items-center justify-center">
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-accent-cyan to-accent-orange flex items-center justify-center">
             <RefreshCw
               size={16}
               className="text-white sm:w-[18px] sm:h-[18px]"
@@ -216,19 +216,25 @@ function SwapPageContent({
         ) : rate > 0 && tokenIn !== tokenOut ? (
           <div className="gradient-border rounded-xl p-4 mb-5">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-white/40">Exchange Rate</p>
-                <p className="font-bold text-white text-sm">
-                  1 {tokenIn.toUpperCase()} = {rate.toFixed(4)}{" "}
-                  {tokenOut.toUpperCase()}
-                </p>
+              <div className="flex items-center gap-2">
+                <TrendingUp size={16} className="text-accent-green" />
+                <div>
+                  <p className="text-xs text-white/40">Exchange Rate</p>
+                  <p className="font-bold text-white text-sm">
+                    1 {tokenIn.toUpperCase()} = {rate.toFixed(4)}{" "}
+                    {tokenOut.toUpperCase()}
+                  </p>
+                </div>
               </div>
               <div className="text-xs text-white/40 text-right">
                 <p>
                   1 {tokenOut.toUpperCase()} = {(1 / rate).toFixed(6)}{" "}
                   {tokenIn.toUpperCase()}
                 </p>
-                <p className="text-accent-green mt-0.5">Live rate</p>
+                <p className="text-accent-green mt-0.5 flex items-center gap-1 justify-end">
+                  <span className="pulse-dot" />
+                  Live rate
+                </p>
               </div>
             </div>
           </div>
@@ -361,7 +367,7 @@ function SwapPageContent({
           )}
 
           <div className="flex items-start gap-2 sm:gap-3 glass px-3 sm:px-4 py-3 rounded-xl border border-accent-cyan/20 text-xs sm:text-sm">
-            <Info
+            <Sparkles
               size={14}
               className="text-accent-cyan mt-0.5 shrink-0 sm:w-4 sm:h-4"
             />
@@ -379,7 +385,7 @@ function SwapPageContent({
               !watch("amount_in") ||
               tokenIn === tokenOut
             }
-            className="btn-neon w-full py-3.5 sm:py-4 rounded-xl sm:rounded-2xl bg-gradient-to-r from-accent-cyan to-accent-purple text-white font-bold text-base sm:text-lg shadow-lg shadow-accent-cyan/30 disabled:opacity-50 transition-all active:scale-98 flex items-center justify-center gap-2"
+            className="btn-neon w-full py-3.5 sm:py-4 rounded-xl sm:rounded-2xl bg-gradient-to-r from-accent-cyan to-accent-orange text-white font-bold text-base sm:text-lg shadow-lg shadow-accent-cyan/30 disabled:opacity-50 transition-all active:scale-98 flex items-center justify-center gap-2"
           >
             {isApproving ? (
               <>

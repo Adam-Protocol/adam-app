@@ -6,7 +6,7 @@ import { useAccount } from "@starknet-react/core";
 import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { ArrowDownRight, Info, CheckCircle2 } from "lucide-react";
+import { ArrowDownRight, Info, CheckCircle2, Sparkles, AlertTriangle } from "lucide-react";
 import axios from "axios";
 import { hash } from "starknet";
 import { WalletGuard } from "@/components/auth/WalletGuard";
@@ -306,7 +306,7 @@ function BuyPageContent({
 
           {/* Privacy info */}
           <div className="flex items-start gap-2 sm:gap-3 glass px-3 sm:px-4 py-3 rounded-xl border border-brand-500/20 text-xs sm:text-sm">
-            <Info
+            <Sparkles
               size={14}
               className="text-brand-400 mt-0.5 shrink-0 sm:w-4 sm:h-4"
             />
