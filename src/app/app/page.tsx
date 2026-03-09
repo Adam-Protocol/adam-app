@@ -6,14 +6,15 @@ import { useAccount } from "@starknet-react/core";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
-  ArrowDownRight,
-  ArrowUpRight,
-  RefreshCw,
   DollarSign,
   Coins,
   ChevronDown,
   Eye,
   EyeOff,
+  ShoppingCart,
+  TrendingUp,
+  RefreshCw,
+  ExternalLink,
 } from "lucide-react";
 import Link from "next/link";
 import axios from "axios";
@@ -23,6 +24,19 @@ import { BalanceModal } from "@/components/ui/BalanceModal";
 import { useBalances } from "@/hooks/useBalances";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+
+const STATUS_CONFIG: Record<string, { color: string; bg: string }> = {
+  completed: { color: "text-accent-green", bg: "bg-accent-green/15" },
+  failed: { color: "text-accent-red", bg: "bg-accent-red/15" },
+  pending: { color: "text-accent-amber", bg: "bg-accent-amber/15" },
+  processing: { color: "text-accent-cyan", bg: "bg-accent-cyan/15" },
+};
+
+const TYPE_CONFIG: Record<string, { icon: any; label: string; color: string }> = {
+  buy: { icon: ShoppingCart, label: "Buy", color: "text-brand-400" },
+  sell: { icon: TrendingUp, label: "Sell", color: "text-accent-orange" },
+  swap: { icon: RefreshCw, label: "Swap", color: "text-accent-cyan" },
+};
 
 function StatCard({ label, value, icon: Icon, color }: any) {
   return (
@@ -42,21 +56,57 @@ function StatCard({ label, value, icon: Icon, color }: any) {
   );
 }
 
-function QuickAction({ href, icon: Icon, label, color }: any) {
+function TxCard({ tx }: { tx: any }) {
+  const status = STATUS_CONFIG[tx.status] ?? STATUS_CONFIG.pending;
+  const type = TYPE_CONFIG[tx.type] ?? { icon: ShoppingCart, label: tx.type, color: "text-white" };
+  const TypeIcon = type.icon;
+
   return (
-    <Link href={href} className="flex-1">
-      <motion.div
-        whileTap={{ scale: 0.95 }}
-        className="flex flex-col items-center gap-2 cursor-pointer"
-      >
-        <div
-          className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${color} flex items-center justify-center shadow-lg`}
-        >
-          <Icon size={24} className="text-white" />
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="glass-strong rounded-xl p-4 border border-white/10 hover:border-white/20 transition-all"
+    >
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex items-center gap-3">
+          <div className={`w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center ${type.color} shrink-0`}>
+            <TypeIcon size={18} />
+          </div>
+          <div>
+            <p className="font-semibold text-white text-sm capitalize">
+              {type.label}
+            </p>
+            <p className="text-xs text-white/40">
+              {tx.token_in} → {tx.token_out}
+            </p>
+          </div>
         </div>
-        <p className="font-medium text-white text-xs text-center">{label}</p>
-      </motion.div>
-    </Link>
+        <span className={`token-badge ${status.bg} ${status.color} text-xs`}>
+          {tx.status}
+        </span>
+      </div>
+      <div className="flex items-center justify-between text-xs">
+        <span className="text-white/40">
+          {new Date(tx.created_at).toLocaleDateString("en-GB", {
+            day: "numeric",
+            month: "short",
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
+        </span>
+        {tx.tx_hash && (
+          <a
+            href={`https://sepolia.voyager.online/tx/${tx.tx_hash}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-brand-400 hover:text-brand-300 transition-colors flex items-center gap-1"
+          >
+            <ExternalLink size={12} />
+            <span>View</span>
+          </a>
+        )}
+      </div>
+    </motion.div>
   );
 }
 
@@ -103,7 +153,7 @@ function DashboardPageContent({
     queryFn: () =>
       address
         ? axios
-          .get(`${API}/activity/${address}`, { params: { limit: 5 } })
+          .get(`${API}/activity/${address}`, { params: { limit: 3 } })
           .then((r) => r.data)
         : null,
     enabled: !!address,
@@ -394,6 +444,54 @@ function DashboardPageContent({
             color="bg-gradient-to-br from-blue-500 to-brand-500"
           />
         </div>
+
+        {/* Desktop - Quick Action Buttons */}
+        <div className="hidden md:flex gap-4 justify-center mt-6">
+          <button
+            onClick={() => toast.info("Coming soon!")}
+            className="flex flex-col items-center gap-3 group"
+          >
+            <motion.div
+              whileTap={{ scale: 0.95 }}
+              className="w-20 h-20 rounded-2xl border border-blue-500/30 hover:border-blue-500/50 flex items-center justify-center transition-all backdrop-blur-sm group-hover:bg-blue-500/5"
+            >
+              <svg className="w-9 h-9 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </motion.div>
+            <p className="text-sm font-medium text-white">Bills & Airtime</p>
+          </button>
+
+          <button
+            onClick={() => toast.info("Coming soon!")}
+            className="flex flex-col items-center gap-3 group"
+          >
+            <motion.div
+              whileTap={{ scale: 0.95 }}
+              className="w-20 h-20 rounded-2xl border border-accent-cyan/30 hover:border-accent-cyan/50 flex items-center justify-center transition-all backdrop-blur-sm group-hover:bg-accent-cyan/5"
+            >
+              <svg className="w-9 h-9 text-accent-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
+              </svg>
+            </motion.div>
+            <p className="text-sm font-medium text-white">Gift Cards</p>
+          </button>
+
+          <button
+            onClick={() => toast.info("Coming soon!")}
+            className="flex flex-col items-center gap-3 group"
+          >
+            <motion.div
+              whileTap={{ scale: 0.95 }}
+              className="w-20 h-20 rounded-2xl border border-accent-orange/30 hover:border-accent-orange/50 flex items-center justify-center transition-all backdrop-blur-sm group-hover:bg-accent-orange/5"
+            >
+              <svg className="w-9 h-9 text-accent-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </motion.div>
+            <p className="text-sm font-medium text-white">Invoice</p>
+          </button>
+        </div>
       </div>
 
       {/* Recent Activity */}
@@ -410,67 +508,26 @@ function DashboardPageContent({
               See all
             </Link>
           </div>
-          <div className="gradient-border overflow-hidden rounded-2xl">
-            {activityLoading ? (
-              <div className="py-16 text-center">
-                <LoadingSpinner
-                  size="md"
-                  className="mx-auto text-brand-400 mb-3"
-                />
-                <p className="text-white/30 text-sm">Loading activity...</p>
-              </div>
-            ) : activity?.data?.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm min-w-[600px]">
-                  <thead>
-                    <tr className="border-b border-white/5 text-white/40">
-                      <th className="text-left px-5 py-3 font-medium">Type</th>
-                      <th className="text-left px-5 py-3 font-medium">Token</th>
-                      <th className="text-left px-5 py-3 font-medium">
-                        Status
-                      </th>
-                      <th className="text-left px-5 py-3 font-medium">Date</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {activity.data.map((tx: any) => (
-                      <tr
-                        key={tx.id}
-                        className="border-b border-white/5 hover:bg-white/3 transition-colors"
-                      >
-                        <td className="px-5 py-3.5 font-medium text-white capitalize">
-                          {tx.type}
-                        </td>
-                        <td className="px-5 py-3.5 text-white/60">
-                          {tx.token_in} → {tx.token_out}
-                        </td>
-                        <td className="px-5 py-3.5">
-                          <span
-                            className={`token-badge ${tx.status === "completed"
-                                ? "bg-accent-green/15 text-accent-green"
-                                : tx.status === "failed"
-                                  ? "bg-accent-red/15 text-accent-red"
-                                  : "bg-accent-amber/15 text-accent-amber"
-                              }`}
-                          >
-                            {tx.status}
-                          </span>
-                        </td>
-                        <td className="px-5 py-3.5 text-white/40">
-                          {new Date(tx.created_at).toLocaleDateString()}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="py-16 text-center text-white/30">
-                <Coins size={32} className="mx-auto mb-3 opacity-30" />
-                <p>No transactions yet</p>
-              </div>
-            )}
-          </div>
+          {activityLoading ? (
+            <div className="gradient-border rounded-2xl py-16 text-center">
+              <LoadingSpinner
+                size="md"
+                className="mx-auto text-brand-400 mb-3"
+              />
+              <p className="text-white/30 text-sm">Loading activity...</p>
+            </div>
+          ) : activity?.data?.length > 0 ? (
+            <div className="space-y-3">
+              {activity.data.map((tx: any) => (
+                <TxCard key={tx.id} tx={tx} />
+              ))}
+            </div>
+          ) : (
+            <div className="gradient-border rounded-2xl py-16 text-center text-white/30">
+              <Coins size={32} className="mx-auto mb-3 opacity-30" />
+              <p>No transactions yet</p>
+            </div>
+          )}
         </div>
       )}
 
