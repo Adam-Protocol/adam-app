@@ -195,6 +195,48 @@ function DashboardPageContent({
           color="bg-gradient-to-br from-accent-purple to-brand-500"
         />
         <StatCard
+          label="ADKES Balance"
+          value={
+            balancesLoading
+              ? "..."
+              : balancesError
+                ? "Error"
+                : balances
+                  ? `KSh${balances.balances.adkes.formatted}`
+                  : "—"
+          }
+          icon={Coins}
+          color="bg-gradient-to-br from-green-500 to-brand-500"
+        />
+        <StatCard
+          label="ADGHS Balance"
+          value={
+            balancesLoading
+              ? "..."
+              : balancesError
+                ? "Error"
+                : balances
+                  ? `₵${balances.balances.adghs.formatted}`
+                  : "—"
+          }
+          icon={Coins}
+          color="bg-gradient-to-br from-yellow-500 to-brand-500"
+        />
+        <StatCard
+          label="ADZAR Balance"
+          value={
+            balancesLoading
+              ? "..."
+              : balancesError
+                ? "Error"
+                : balances
+                  ? `R${balances.balances.adzar.formatted}`
+                  : "—"
+          }
+          icon={Coins}
+          color="bg-gradient-to-br from-blue-500 to-brand-500"
+        />
+        <StatCard
           label="Live Rate"
           value={
             rateLoading
@@ -233,7 +275,7 @@ function DashboardPageContent({
             href="/app/swap"
             icon={RefreshCw}
             label="Swap"
-            desc="ADUSD ↔ ADNGN"
+            desc="ADUSD ↔ All Currencies"
             color="from-accent-cyan to-accent-purple"
           />
           <QuickAction
