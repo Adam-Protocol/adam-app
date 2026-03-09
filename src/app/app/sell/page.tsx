@@ -24,9 +24,9 @@ import { CheckCircle2 } from "lucide-react";
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
 type SellForm = {
-  token_in: "adusd" | "adngn";
+  token_in: "adusd" | "adngn" | "adkes" | "adghs" | "adzar";
   amount: string;
-  currency: "NGN" | "USD";
+  currency: "NGN" | "USD" | "KES" | "GHS" | "ZAR";
   bank_account: string;
   bank_code: string;
 };
@@ -58,6 +58,33 @@ export default function SellPage() {
   );
 }
 
+// Currency to country mapping
+const CURRENCY_TO_COUNTRY: Record<string, string> = {
+  NGN: "NG",
+  USD: "US",
+  KES: "KE",
+  GHS: "GH",
+  ZAR: "ZA",
+};
+
+// Token to currency mapping
+const TOKEN_TO_CURRENCY: Record<string, string> = {
+  adusd: "USD",
+  adngn: "NGN",
+  adkes: "KES",
+  adghs: "GHS",
+  adzar: "ZAR",
+};
+
+// Currency display info
+const CURRENCY_INFO: Record<string, { flag: string; name: string }> = {
+  NGN: { flag: "🇳🇬", name: "Nigerian Naira" },
+  USD: { flag: "🇺🇸", name: "US Dollar" },
+  KES: { flag: "🇰🇪", name: "Kenyan Shilling" },
+  GHS: { flag: "🇬🇭", name: "Ghanaian Cedi" },
+  ZAR: { flag: "🇿🇦", name: "South African Rand" },
+};
+
 function SellPageContent({
   address,
   isConnected,
@@ -83,7 +110,7 @@ function SellPageContent({
   const { executeSell, isExecuting } = useSellToken();
 
   // Fetch banks based on selected currency
-  const country = currency === "NGN" ? "NG" : "US";
+  const country = CURRENCY_TO_COUNTRY[currency] || "NG";
   const {
     data: banks = [],
     isLoading: loadingBanks,
@@ -245,26 +272,34 @@ function SellPageContent({
               <label className="block text-sm font-medium text-white/70 mb-2">
                 Token to Sell
               </label>
-              <div className="grid grid-cols-2 gap-3">
-                {(["adusd", "adngn"] as const).map((t) => (
-                  <label
-                    key={t}
-                    className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-all ${watch("token_in") === t ? "border-accent-purple bg-accent-purple/10" : "border-white/10 bg-white/3"}`}
-                  >
-                    <input
-                      type="radio"
-                      value={t}
-                      {...register("token_in")}
-                      className="sr-only"
-                    />
-                    <span className="text-xl">
-                      {t === "adusd" ? "🇺🇸" : "🇳🇬"}
-                    </span>
-                    <p className="font-bold text-white text-sm uppercase">
-                      {t}
-                    </p>
-                  </label>
-                ))}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {(["adusd", "adngn", "adkes", "adghs", "adzar"] as const).map((t) => {
+                  const currencyCode = TOKEN_TO_CURRENCY[t];
+                  const currencyInfo = CURRENCY_INFO[currencyCode];
+                  return (
+                    <label
+                      key={t}
+                      className={`flex items-center gap-2 p-3 rounded-xl border cursor-pointer transition-all ${watch("token_in") === t ? "border-accent-purple bg-accent-purple/10" : "border-white/10 bg-white/3"}`}
+                    >
+                      <input
+                        type="radio"
+                        value={t}
+                        {...register("token_in", {
+                          onChange: (e: any) => {
+                            // Auto-update currency when token changes
+                            const newCurrency = TOKEN_TO_CURRENCY[e.target.value];
+                            setValue("currency", newCurrency as any);
+                          },
+                        })}
+                        className="sr-only"
+                      />
+                      <span className="text-lg">{currencyInfo.flag}</span>
+                      <p className="font-bold text-white text-xs uppercase">
+                        {t}
+                      </p>
+                    </label>
+                  );
+                })}
               </div>
             </div>
 
@@ -308,31 +343,25 @@ function SellPageContent({
             <h3 className="font-semibold text-white">Bank Details</h3>
 
             {/* Currency Selection */}
-            <div className="grid grid-cols-2 gap-3">
-              <label
-                className={`flex items-center gap-2 p-3 rounded-xl border cursor-pointer transition-all ${currency === "NGN" ? "border-brand-500 bg-brand-500/10" : "border-white/10"}`}
-              >
-                <input
-                  type="radio"
-                  value="NGN"
-                  {...register("currency")}
-                  className="sr-only"
-                />
-                <span>🇳🇬</span>
-                <span className="text-sm font-medium text-white">NGN</span>
-              </label>
-              <label
-                className={`flex items-center gap-2 p-3 rounded-xl border cursor-pointer transition-all ${currency === "USD" ? "border-brand-500 bg-brand-500/10" : "border-white/10"}`}
-              >
-                <input
-                  type="radio"
-                  value="USD"
-                  {...register("currency")}
-                  className="sr-only"
-                />
-                <span>🇺🇸</span>
-                <span className="text-sm font-medium text-white">USD</span>
-              </label>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {(["NGN", "USD", "KES", "GHS", "ZAR"] as const).map((curr) => {
+                const info = CURRENCY_INFO[curr];
+                return (
+                  <label
+                    key={curr}
+                    className={`flex items-center gap-2 p-2.5 rounded-xl border cursor-pointer transition-all ${currency === curr ? "border-brand-500 bg-brand-500/10" : "border-white/10"}`}
+                  >
+                    <input
+                      type="radio"
+                      value={curr}
+                      {...register("currency")}
+                      className="sr-only"
+                    />
+                    <span className="text-base">{info.flag}</span>
+                    <span className="text-xs font-medium text-white">{curr}</span>
+                  </label>
+                );
+              })}
             </div>
 
             {/* Bank Selection */}
