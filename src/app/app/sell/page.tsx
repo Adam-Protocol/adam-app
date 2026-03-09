@@ -5,7 +5,7 @@ import { useAccount } from "@starknet-react/core";
 import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { ArrowUpRight, Info } from "lucide-react";
+import { ArrowUpRight, Info, Sparkles, CheckCircle2, AlertCircle } from "lucide-react";
 import axios from "axios";
 import { hash } from "starknet";
 import { WalletGuard } from "@/components/auth/WalletGuard";
@@ -19,7 +19,6 @@ import { useState, useEffect } from "react";
 import { BankSearchDropdown } from "@/components/ui/BankSearchDropdown";
 import { useSellToken } from "@/hooks/useSellToken";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
-import { CheckCircle2 } from "lucide-react";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
@@ -246,7 +245,7 @@ function SellPageContent({
         animate={{ opacity: 1, y: 0 }}
       >
         <div className="flex items-center gap-3 mb-6 sm:mb-8">
-          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-accent-purple to-brand-500 flex items-center justify-center">
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-accent-orange to-brand-500 flex items-center justify-center">
             <ArrowUpRight
               size={16}
               className="text-white sm:w-[18px] sm:h-[18px]"
@@ -279,7 +278,7 @@ function SellPageContent({
                   return (
                     <label
                       key={t}
-                      className={`flex items-center gap-2 p-3 rounded-xl border cursor-pointer transition-all ${watch("token_in") === t ? "border-accent-purple bg-accent-purple/10" : "border-white/10 bg-white/3"}`}
+                      className={`flex items-center gap-2 p-3 rounded-xl border cursor-pointer transition-all ${watch("token_in") === t ? "border-accent-orange bg-accent-orange/10" : "border-white/10 bg-white/3"}`}
                     >
                       <input
                         type="radio"
@@ -321,19 +320,21 @@ function SellPageContent({
                 </span>
               </div>
               {loadingCommitments && (
-                <p className="text-xs text-white/40 mt-1">
+                <div className="text-xs text-white/40 mt-1 flex items-center gap-1">
+                  <LoadingSpinner size="sm" />
                   Loading available balance...
-                </p>
+                </div>
               )}
               {!loadingCommitments && commitments.length === 0 && (
-                <p className="text-xs text-yellow-400 mt-1">
+                <div className="text-xs text-yellow-400 mt-1 flex items-center gap-1">
+                  <AlertCircle size={14} />
                   No {tokenType.toUpperCase()} purchased yet. Buy tokens first.
-                </p>
+                </div>
               )}
               {!loadingCommitments && commitments.length > 0 && (
-                <p className="text-xs text-green-400 mt-1">
-                  ✓ {commitments.length} commitment(s) available
-                </p>
+                <div className="text-xs text-green-400 mt-1 flex items-center gap-1">
+                  <CheckCircle2 size={14} /> {commitments.length} commitment(s) available
+                </div>
               )}
             </div>
           </div>
@@ -416,22 +417,22 @@ function SellPageContent({
 
               {/* Account Verification Status */}
               {verifyAccountMutation.isPending && (
-                <p className="text-xs text-blue-400 mt-1 flex items-center gap-1">
-                  <span className="animate-spin">⏳</span> Verifying account...
-                </p>
+                <div className="text-xs text-blue-400 mt-1 flex items-center gap-1">
+                  <LoadingSpinner size="sm" /> Verifying account...
+                </div>
               )}
               {verifiedAccountName && (
-                <p className="text-xs text-green-400 mt-1 flex items-center gap-1">
-                  ✓ <span className="font-semibold">{verifiedAccountName}</span>
-                </p>
+                <div className="text-xs text-green-400 mt-1 flex items-center gap-1">
+                  <CheckCircle2 size={14} /> <span className="font-semibold">{verifiedAccountName}</span>
+                </div>
               )}
             </div>
           </div>
 
-          <div className="flex items-start gap-2 sm:gap-3 glass px-3 sm:px-4 py-3 rounded-xl border border-accent-purple/20 text-xs sm:text-sm">
-            <Info
+          <div className="flex items-start gap-2 sm:gap-3 glass px-3 sm:px-4 py-3 rounded-xl border border-accent-orange/20 text-xs sm:text-sm">
+            <Sparkles
               size={14}
-              className="text-accent-purple mt-0.5 shrink-0 sm:w-4 sm:h-4"
+              className="text-accent-orange mt-0.5 shrink-0 sm:w-4 sm:h-4"
             />
             <p className="text-white/50">
               Your bank details are processed once, never stored. Amount is
@@ -454,7 +455,7 @@ function SellPageContent({
               !verifiedAccountName ||
               commitments.length === 0
             }
-            className="btn-neon w-full py-3.5 sm:py-4 rounded-xl sm:rounded-2xl bg-gradient-to-r from-accent-purple to-brand-500 text-white font-bold text-base sm:text-lg shadow-lg shadow-accent-purple/30 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-accent-purple/50 transition-all active:scale-98 flex items-center justify-center gap-2"
+            className="btn-neon w-full py-3.5 sm:py-4 rounded-xl sm:rounded-2xl bg-gradient-to-r from-accent-orange to-brand-500 text-white font-bold text-base sm:text-lg shadow-lg shadow-accent-orange/30 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-accent-orange/50 transition-all active:scale-98 flex items-center justify-center gap-2"
           >
             {mutation.isPending || isExecuting ? (
               <>
