@@ -2,6 +2,9 @@
 export const CONTRACTS = {
   ADUSD: process.env.NEXT_PUBLIC_ADUSD_ADDRESS || "",
   ADNGN: process.env.NEXT_PUBLIC_ADNGN_ADDRESS || "",
+  ADKES: process.env.NEXT_PUBLIC_ADKES_ADDRESS || "",
+  ADGHS: process.env.NEXT_PUBLIC_ADGHS_ADDRESS || "",
+  ADZAR: process.env.NEXT_PUBLIC_ADZAR_ADDRESS || "",
   ADAM_SWAP: process.env.NEXT_PUBLIC_ADAM_SWAP_ADDRESS || "",
   USDC: process.env.NEXT_PUBLIC_USDC_ADDRESS || "",
 } as const;
@@ -32,6 +35,24 @@ export const TOKENS = {
     decimals: 18,
     address: CONTRACTS.ADNGN,
   },
+  ADKES: {
+    symbol: "ADKES",
+    name: "Adam KES",
+    decimals: 18,
+    address: CONTRACTS.ADKES,
+  },
+  ADGHS: {
+    symbol: "ADGHS",
+    name: "Adam GHS",
+    decimals: 18,
+    address: CONTRACTS.ADGHS,
+  },
+  ADZAR: {
+    symbol: "ADZAR",
+    name: "Adam ZAR",
+    decimals: 18,
+    address: CONTRACTS.ADZAR,
+  },
   USDC: {
     symbol: "USDC",
     name: "USD Coin",
@@ -44,6 +65,9 @@ export const TOKENS = {
 export const CURRENCIES = {
   USD: "USD",
   NGN: "NGN",
+  KES: "KES",
+  GHS: "GHS",
+  ZAR: "ZAR",
 } as const;
 
 // Transaction types
