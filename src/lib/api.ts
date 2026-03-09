@@ -49,14 +49,14 @@ export const api = {
     buy: (data: {
       wallet: string;
       amount_in: string;
-      token_out: "adusd" | "adngn";
+      token_out: "adusd" | "adngn" | "adkes" | "adghs" | "adzar";
       commitment: string;
       transactionId?: string;
     }) => apiClient.post("/token/buy", data),
 
     sell: (data: {
       wallet: string;
-      token_in: "adusd" | "adngn";
+      token_in: "adusd" | "adngn" | "adkes" | "adghs" | "adzar";
       amount: string;
       nullifier: string;
       commitment: string;
@@ -72,6 +72,9 @@ export const api = {
         balances: {
           adusd: { raw: string; formatted: string; decimals: number };
           adngn: { raw: string; formatted: string; decimals: number };
+          adkes: { raw: string; formatted: string; decimals: number };
+          adghs: { raw: string; formatted: string; decimals: number };
+          adzar: { raw: string; formatted: string; decimals: number };
           usdc: { raw: string; formatted: string; decimals: number };
         };
       }>(`/token/balances/${wallet}`),
@@ -81,9 +84,9 @@ export const api = {
   swap: {
     execute: (data: {
       wallet: string;
-      token_in: "adusd" | "adngn";
+      token_in: "adusd" | "adngn" | "adkes" | "adghs" | "adzar";
       amount_in: string;
-      token_out: "adusd" | "adngn";
+      token_out: "adusd" | "adngn" | "adkes" | "adghs" | "adzar";
       min_amount_out: string;
       commitment: string;
       transactionId?: string;
