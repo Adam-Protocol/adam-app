@@ -3,55 +3,63 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight } from "lucide-react";
+import { useEffect, useState } from "react";
+import { 
+  ArrowRight, 
+  Shield, 
+  Zap, 
+  Globe, 
+  Lock, 
+  TrendingUp, 
+  Network,
+  Sparkles,
+  CheckCircle2,
+  Github,
+  Twitter,
+  FileText
+} from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { AnimatedBackground } from "@/components/ui/AnimatedBackground";
 import { ScrollIndicator } from "@/components/ui/ScrollIndicator";
-import {
-  ShieldIcon,
-  LightningIcon,
-  GlobeIcon,
-  LockIcon,
-  TrendingIcon,
-  NetworkIcon,
-} from "@/components/icons/CustomIcons";
+import { useWallet } from "@/hooks/useWallet";
+import { useRouter } from "next/navigation";
 
 const FEATURES = [
   {
-    icon: ShieldIcon,
+    icon: Shield,
     title: "Privacy First",
     desc: "Pedersen commitment scheme hides all amounts on-chain. Only you know what you transacted.",
     color: "from-brand-500 to-brand-400",
   },
   {
-    icon: LightningIcon,
+    icon: Zap,
     title: "Instant Minting",
     desc: "Deposit USDC and receive ADUSD or ADNGN instantly. No KYC, no waiting.",
     color: "from-accent-cyan to-brand-500",
   },
   {
-    icon: GlobeIcon,
+    icon: Globe,
     title: "Fiat Offramp",
     desc: "Burn your ADNGN and receive local currency directly to your bank account.",
-    color: "from-accent-purple to-accent-cyan",
+    color: "from-accent-orange to-accent-cyan",
   },
   {
-    icon: LockIcon,
+    icon: Lock,
     title: "Non-Custodial",
     desc: "Your keys, your tokens. The protocol never holds your funds.",
     color: "from-accent-green to-accent-cyan",
   },
   {
-    icon: TrendingIcon,
+    icon: TrendingUp,
     title: "Live Rates",
     desc: "Real-time USD/NGN rates from ExchangeRate-API, pushed on-chain every 5 minutes.",
     color: "from-accent-amber to-accent-green",
   },
   {
-    icon: NetworkIcon,
+    icon: Network,
     title: "Built on Starknet",
     desc: "Leverages Starknet's STARK proofs for cheap, fast, and verifiable transactions.",
-    color: "from-brand-400 to-accent-purple",
+    color: "from-brand-400 to-accent-orange",
   },
 ];
 
@@ -89,6 +97,28 @@ function FeatureCard({ icon: Icon, title, desc, color, index }: any) {
 }
 
 export default function LandingPage() {
+  const { isConnected, connectWallet } = useWallet();
+  const router = useRouter();
+  const [pendingRoute, setPendingRoute] = useState<string | null>(null);
+
+  // Redirect when wallet connects and there's a pending route
+  useEffect(() => {
+    if (isConnected && pendingRoute) {
+      router.push(pendingRoute);
+      setPendingRoute(null);
+    }
+  }, [isConnected, pendingRoute, router]);
+
+  const handleCTAClick = async (e: React.MouseEvent, href: string) => {
+    e.preventDefault();
+    if (!isConnected) {
+      setPendingRoute(href);
+      await connectWallet();
+    } else {
+      router.push(href);
+    }
+  };
+
   return (
     <div className="bg-page min-h-screen">
       <Navbar />
@@ -133,8 +163,11 @@ export default function LandingPage() {
           >
             Adam Protocol is a privacy-first stablecoin protocol on Starknet.
             Mint, swap, and offramp{" "}
-            <strong className="text-white/80">ADUSD</strong> &{" "}
-            <strong className="text-white/80">ADNGN</strong> with zero amount
+            <strong className="text-white/80">ADUSD</strong>,{" "}
+            <strong className="text-white/80">ADNGN</strong>,{" "}
+            <strong className="text-white/80">ADKES</strong>,{" "}
+            <strong className="text-white/80">ADGHS</strong> &{" "}
+            <strong className="text-white/80">ADZAR</strong> with zero amount
             exposure on-chain.
           </motion.p>
 
@@ -181,18 +214,21 @@ export default function LandingPage() {
             transition={{ delay: 0.4, duration: 0.6 }}
             className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 sm:gap-4 px-4"
           >
-            <Link
-              href="/app/buy"
-              className="btn-neon flex items-center justify-center gap-2 px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl bg-gradient-to-r from-brand-500 to-accent-cyan text-white font-bold text-base sm:text-lg shadow-xl shadow-brand-500/30 hover:shadow-brand-500/50 hover:scale-105 active:scale-98 transition-all duration-200"
+            <button
+              onClick={(e) => handleCTAClick(e, "/app/buy")}
+              className="btn-neon group flex items-center justify-center gap-2 px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl bg-gradient-to-r from-brand-500 to-accent-cyan text-white font-bold text-base sm:text-lg shadow-xl shadow-brand-500/30 hover:shadow-brand-500/50 hover:scale-105 active:scale-98 transition-all duration-200 cursor-pointer"
             >
-              Get Started <ArrowRight size={18} />
-            </Link>
-            <Link
-              href="/app"
-              className="glass flex items-center justify-center gap-2 px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl border border-white/10 text-white/70 font-semibold text-base sm:text-lg hover:text-white hover:border-white/20 hover:bg-white/5 active:scale-98 transition-all duration-200"
+              <Sparkles size={18} className="group-hover:rotate-12 transition-transform" />
+              Get Started 
+              <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+            </button>
+            <button
+              onClick={(e) => handleCTAClick(e, "/app")}
+              className="glass group flex items-center justify-center gap-2 px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl border border-white/10 text-white/70 font-semibold text-base sm:text-lg hover:text-white hover:border-white/20 hover:bg-white/5 active:scale-98 transition-all duration-200 cursor-pointer"
             >
               View Dashboard
-            </Link>
+              <ArrowRight size={18} className="opacity-0 -ml-4 group-hover:opacity-100 group-hover:ml-0 transition-all" />
+            </button>
           </motion.div>
 
           {/* Stats */}
@@ -211,7 +247,7 @@ export default function LandingPage() {
               {
                 value: "0%",
                 label: "Exposure",
-                color: "from-accent-purple to-accent-cyan",
+                color: "from-accent-orange to-accent-cyan",
               },
               {
                 value: "$0",
@@ -296,18 +332,21 @@ export default function LandingPage() {
                 title: "Connect & Deposit",
                 desc: "Connect your Starknet wallet and deposit USDC. Choose to receive ADUSD or ADNGN.",
                 color: "from-brand-500 to-accent-cyan",
+                icon: Lock,
               },
               {
                 step: "02",
                 title: "Private Commitment",
                 desc: "Your amount is hidden using Pedersen commitments. Only you know the transaction value.",
-                color: "from-accent-cyan to-accent-purple",
+                color: "from-accent-cyan to-accent-orange",
+                icon: Shield,
               },
               {
                 step: "03",
                 title: "Swap or Offramp",
                 desc: "Swap between ADUSD and ADNGN at live rates, or offramp directly to your bank account.",
-                color: "from-accent-purple to-brand-500",
+                color: "from-accent-orange to-brand-500",
+                icon: Zap,
               },
             ].map((item, i) => (
               <motion.div
@@ -319,13 +358,19 @@ export default function LandingPage() {
                 className="flex gap-4 sm:gap-6 items-start group"
               >
                 <div
-                  className={`flex-shrink-0 w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-gradient-to-br ${item.color} flex items-center justify-center font-black text-white text-lg sm:text-xl shadow-lg group-hover:scale-110 transition-transform duration-300`}
+                  className={`flex-shrink-0 w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-gradient-to-br ${item.color} flex items-center justify-center font-black text-white text-lg sm:text-xl shadow-lg group-hover:scale-110 transition-transform duration-300 relative`}
                 >
-                  {item.step}
+                  <span className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <item.icon size={20} className="sm:w-6 sm:h-6" />
+                  </span>
+                  <span className="group-hover:opacity-0 transition-opacity">
+                    {item.step}
+                  </span>
                 </div>
                 <div className="flex-1 pt-1 sm:pt-2">
-                  <h3 className="font-bold text-white text-base sm:text-lg mb-2 group-hover:text-brand-400 transition-colors">
+                  <h3 className="font-bold text-white text-base sm:text-lg mb-2 group-hover:text-brand-400 transition-colors flex items-center gap-2">
                     {item.title}
+                    <CheckCircle2 size={16} className="text-accent-green opacity-0 group-hover:opacity-100 transition-opacity" />
                   </h3>
                   <p className="text-sm text-white/50 leading-relaxed">
                     {item.desc}
@@ -341,32 +386,125 @@ export default function LandingPage() {
             viewport={{ once: true }}
             className="mt-12 text-center"
           >
-            <Link
-              href="/app"
-              className="inline-flex items-center gap-2 btn-neon px-6 sm:px-8 py-3 sm:py-3.5 rounded-xl bg-gradient-to-r from-brand-500 to-accent-cyan text-white font-semibold text-sm sm:text-base shadow-lg shadow-brand-500/30 hover:shadow-brand-500/50 hover:scale-105 active:scale-98 transition-all"
+            <button
+              onClick={(e) => handleCTAClick(e, "/app")}
+              className="inline-flex items-center gap-2 btn-neon px-6 sm:px-8 py-3 sm:py-3.5 rounded-xl bg-gradient-to-r from-brand-500 to-accent-cyan text-white font-semibold text-sm sm:text-base shadow-lg shadow-brand-500/30 hover:shadow-brand-500/50 hover:scale-105 active:scale-98 transition-all group cursor-pointer"
             >
-              Try It Now <ArrowRight size={16} />
-            </Link>
+              Try It Now 
+              <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+            </button>
           </motion.div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-white/5 py-8 sm:py-10 px-4 text-center text-white/30 text-xs sm:text-sm">
-        <div className="flex items-center justify-center gap-2 mb-3">
-          <div className="relative w-6 h-6 rounded-lg overflow-hidden">
-            <Image
-              src="/fav-mobile-icon.png"
-              alt="Adam Protocol"
-              fill
-              className="object-cover"
-            />
+      <footer className="border-t border-white/5 py-8 sm:py-12 px-4">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
+            {/* Brand */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <div className="relative w-8 h-8 rounded-lg overflow-hidden">
+                  <Image
+                    src="/fav-mobile-icon.png"
+                    alt="Adam Protocol"
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+                <span className="font-bold text-white text-lg">Adam Protocol</span>
+              </div>
+              <p className="text-white/40 text-sm leading-relaxed">
+                Privacy-first stablecoin protocol on Starknet. Built for African scale.
+              </p>
+            </div>
+
+            {/* Product */}
+            <div>
+              <h4 className="font-semibold text-white mb-3 text-sm">Product</h4>
+              <ul className="space-y-2 text-sm">
+                <li>
+                  <Link href="/app/buy" className="text-white/50 hover:text-brand-400 transition-colors flex items-center gap-1">
+                    <ArrowRight size={12} className="opacity-0 group-hover:opacity-100" />
+                    Buy Tokens
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/app/sell" className="text-white/50 hover:text-brand-400 transition-colors">
+                    Sell Tokens
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/app/swap" className="text-white/50 hover:text-brand-400 transition-colors">
+                    Swap
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/app/activity" className="text-white/50 hover:text-brand-400 transition-colors">
+                    Activity
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            {/* Resources */}
+            <div>
+              <h4 className="font-semibold text-white mb-3 text-sm">Resources</h4>
+              <ul className="space-y-2 text-sm">
+                <li>
+                  <a href="#" className="text-white/50 hover:text-brand-400 transition-colors inline-flex items-center gap-1">
+                    <FileText size={14} />
+                    Documentation
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="text-white/50 hover:text-brand-400 transition-colors inline-flex items-center gap-1">
+                    <Github size={14} />
+                    GitHub
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="text-white/50 hover:text-brand-400 transition-colors inline-flex items-center gap-1">
+                    <Twitter size={14} />
+                    Twitter
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            {/* Legal */}
+            <div>
+              <h4 className="font-semibold text-white mb-3 text-sm">Legal</h4>
+              <ul className="space-y-2 text-sm">
+                <li>
+                  <a href="#" className="text-white/50 hover:text-brand-400 transition-colors">
+                    Privacy Policy
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="text-white/50 hover:text-brand-400 transition-colors">
+                    Terms of Service
+                  </a>
+                </li>
+              </ul>
+            </div>
           </div>
-          <span className="font-semibold text-white/40">Adam Protocol</span>
+
+          {/* Bottom */}
+          <div className="pt-6 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-white/30">
+            <p>
+              © 2026 Adam Protocol. Built on Starknet · Privacy Track · Starknet Re{"{"}define{"}"} 2026
+            </p>
+            <div className="flex items-center gap-4">
+              <a href="#" className="hover:text-brand-400 transition-colors">
+                <Github size={16} />
+              </a>
+              <a href="#" className="hover:text-brand-400 transition-colors">
+                <Twitter size={16} />
+              </a>
+            </div>
+          </div>
         </div>
-        <p>
-          Built on Starknet · Privacy Track · Starknet Re{"{"}define{"}"} 2026
-        </p>
       </footer>
     </div>
   );

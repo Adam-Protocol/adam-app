@@ -28,7 +28,7 @@ module.exports = {
         },
         accent: {
           cyan:   '#06b6d4',
-          purple: '#a855f7',
+          orange: '#f97316',
           green:  '#22c55e',
           amber:  '#f59e0b',
           red:    '#ef4444',
