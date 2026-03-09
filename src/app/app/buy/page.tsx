@@ -6,7 +6,7 @@ import { useAccount } from "@starknet-react/core";
 import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { ArrowDownRight, Info, CheckCircle2 } from "lucide-react";
+import { ArrowDownRight, Info, CheckCircle2, Sparkles, AlertTriangle } from "lucide-react";
 import axios from "axios";
 import { hash } from "starknet";
 import { WalletGuard } from "@/components/auth/WalletGuard";
@@ -19,7 +19,7 @@ import { useBuyRate } from "@/hooks/useBuyRate";
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
 type BuyForm = {
-  token_out: "adusd" | "adngn";
+  token_out: "adusd" | "adngn" | "adkes" | "adghs" | "adzar";
   amount_in: string;
 };
 
@@ -49,6 +49,15 @@ export default function BuyPage() {
     </WalletGuard>
   );
 }
+
+// Token display info
+const TOKEN_INFO: Record<string, { flag: string; name: string; currency: string }> = {
+  adusd: { flag: "🇺🇸", name: "Adam USD", currency: "USD" },
+  adngn: { flag: "🇳🇬", name: "Adam NGN", currency: "NGN" },
+  adkes: { flag: "🇰🇪", name: "Adam KES", currency: "KES" },
+  adghs: { flag: "🇬🇭", name: "Adam GHS", currency: "GHS" },
+  adzar: { flag: "🇿🇦", name: "Adam ZAR", currency: "ZAR" },
+};
 
 function BuyPageContent({
   address,
@@ -199,36 +208,39 @@ function BuyPageContent({
             <label className="block text-sm font-medium text-white/70 mb-2">
               Receive Token
             </label>
-            <div className="grid grid-cols-2 gap-3">
-              {(["adusd", "adngn"] as const).map((t) => (
-                <label
-                  key={t}
-                  className={`relative flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-all ${
-                    tokenOut === t
-                      ? "border-brand-500 bg-brand-500/10"
-                      : "border-white/10 bg-white/3 hover:border-white/20"
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    value={t}
-                    {...register("token_out")}
-                    className="sr-only"
-                  />
-                  <span className="text-xl">{t === "adusd" ? "🇺🇸" : "🇳🇬"}</span>
-                  <div>
-                    <p className="font-bold text-white text-sm uppercase">
-                      {t}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {(["adusd", "adngn", "adkes", "adghs", "adzar"] as const).map((t) => {
+                const info = TOKEN_INFO[t];
+                return (
+                  <label
+                    key={t}
+                    className={`relative flex flex-col gap-1 p-3 rounded-xl border cursor-pointer transition-all ${
+                      tokenOut === t
+                        ? "border-brand-500 bg-brand-500/10"
+                        : "border-white/10 bg-white/3 hover:border-white/20"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      value={t}
+                      {...register("token_out")}
+                      className="sr-only"
+                    />
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">{info.flag}</span>
+                      <p className="font-bold text-white text-xs uppercase">
+                        {t}
+                      </p>
+                    </div>
+                    <p className="text-[10px] text-white/40">
+                      {info.name}
                     </p>
-                    <p className="text-xs text-white/40">
-                      {t === "adusd" ? "Adam USD" : "Adam NGN"}
-                    </p>
-                  </div>
-                  {tokenOut === t && (
-                    <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-brand-400" />
-                  )}
-                </label>
-              ))}
+                    {tokenOut === t && (
+                      <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-brand-400" />
+                    )}
+                  </label>
+                );
+              })}
             </div>
 
             {/* Amount */}
@@ -294,7 +306,7 @@ function BuyPageContent({
 
           {/* Privacy info */}
           <div className="flex items-start gap-2 sm:gap-3 glass px-3 sm:px-4 py-3 rounded-xl border border-brand-500/20 text-xs sm:text-sm">
-            <Info
+            <Sparkles
               size={14}
               className="text-brand-400 mt-0.5 shrink-0 sm:w-4 sm:h-4"
             />

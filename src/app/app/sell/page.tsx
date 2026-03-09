@@ -2,10 +2,10 @@
 
 import { motion } from "framer-motion";
 import { useAccount } from "@starknet-react/core";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { ArrowUpRight, Info } from "lucide-react";
+import { ArrowUpRight, Info, Sparkles, CheckCircle2, AlertCircle } from "lucide-react";
 import axios from "axios";
 import { hash } from "starknet";
 import { WalletGuard } from "@/components/auth/WalletGuard";
@@ -19,14 +19,13 @@ import { useState, useEffect } from "react";
 import { BankSearchDropdown } from "@/components/ui/BankSearchDropdown";
 import { useSellToken } from "@/hooks/useSellToken";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
-import { CheckCircle2 } from "lucide-react";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
 type SellForm = {
-  token_in: "adusd" | "adngn";
+  token_in: "adusd" | "adngn" | "adkes" | "adghs" | "adzar";
   amount: string;
-  currency: "NGN" | "USD";
+  currency: "NGN" | "USD" | "KES" | "GHS" | "ZAR";
   bank_account: string;
   bank_code: string;
 };
@@ -58,6 +57,33 @@ export default function SellPage() {
   );
 }
 
+// Currency to country mapping
+const CURRENCY_TO_COUNTRY: Record<string, string> = {
+  NGN: "NG",
+  USD: "US",
+  KES: "KE",
+  GHS: "GH",
+  ZAR: "ZA",
+};
+
+// Token to currency mapping
+const TOKEN_TO_CURRENCY: Record<string, string> = {
+  adusd: "USD",
+  adngn: "NGN",
+  adkes: "KES",
+  adghs: "GHS",
+  adzar: "ZAR",
+};
+
+// Currency display info
+const CURRENCY_INFO: Record<string, { flag: string; name: string }> = {
+  NGN: { flag: "🇳🇬", name: "Nigerian Naira" },
+  USD: { flag: "🇺🇸", name: "US Dollar" },
+  KES: { flag: "🇰🇪", name: "Kenyan Shilling" },
+  GHS: { flag: "🇬🇭", name: "Ghanaian Cedi" },
+  ZAR: { flag: "🇿🇦", name: "South African Rand" },
+};
+
 function SellPageContent({
   address,
   isConnected,
@@ -71,6 +97,7 @@ function SellPageContent({
   const currency = watch("currency");
   const accountNumber = watch("bank_account");
   const bankCode = watch("bank_code");
+  const amount = watch("amount");
 
   const [verifiedAccountName, setVerifiedAccountName] = useState<string | null>(
     null,
@@ -82,8 +109,54 @@ function SellPageContent({
   const { getSecret } = useCommitment();
   const { executeSell, isExecuting } = useSellToken();
 
+  // Fetch all rates
+  const { data: ratesData, isLoading: ratesLoading } = useQuery({
+    queryKey: ["rates"],
+    queryFn: () => axios.get(`${API}/swap/rates`).then((r) => r.data),
+    refetchInterval: 30_000,
+    retry: 3,
+  });
+
+  // Calculate fiat amount user will receive
+  const calculateFiatAmount = () => {
+    if (!amount || !ratesData || parseFloat(amount) <= 0) return 0;
+
+    const tokenCurrency = TOKEN_TO_CURRENCY[tokenType];
+    
+    // If selling the same currency (e.g., ADNGN -> NGN), it's 1:1
+    if (tokenCurrency === currency) {
+      return parseFloat(amount);
+    }
+
+    // If selling ADUSD to another currency
+    if (tokenType === "adusd") {
+      const rate = ratesData[currency]?.rate || 0;
+      return parseFloat(amount) * rate;
+    }
+
+    // If selling another currency to USD
+    if (currency === "USD") {
+      const rate = ratesData[tokenCurrency]?.rate || 0;
+      return rate > 0 ? parseFloat(amount) / rate : 0;
+    }
+
+    // Cross-currency conversion (e.g., ADNGN -> KES)
+    const fromRate = ratesData[tokenCurrency]?.rate || 0;
+    const toRate = ratesData[currency]?.rate || 0;
+    
+    if (fromRate > 0) {
+      // Convert to USD first, then to target currency
+      const usdAmount = parseFloat(amount) / fromRate;
+      return usdAmount * toRate;
+    }
+
+    return 0;
+  };
+
+  const fiatAmount = calculateFiatAmount();
+
   // Fetch banks based on selected currency
-  const country = currency === "NGN" ? "NG" : "US";
+  const country = CURRENCY_TO_COUNTRY[currency] || "NG";
   const {
     data: banks = [],
     isLoading: loadingBanks,
@@ -219,7 +292,7 @@ function SellPageContent({
         animate={{ opacity: 1, y: 0 }}
       >
         <div className="flex items-center gap-3 mb-6 sm:mb-8">
-          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-accent-purple to-brand-500 flex items-center justify-center">
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-accent-orange to-brand-500 flex items-center justify-center">
             <ArrowUpRight
               size={16}
               className="text-white sm:w-[18px] sm:h-[18px]"
@@ -245,26 +318,34 @@ function SellPageContent({
               <label className="block text-sm font-medium text-white/70 mb-2">
                 Token to Sell
               </label>
-              <div className="grid grid-cols-2 gap-3">
-                {(["adusd", "adngn"] as const).map((t) => (
-                  <label
-                    key={t}
-                    className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-all ${watch("token_in") === t ? "border-accent-purple bg-accent-purple/10" : "border-white/10 bg-white/3"}`}
-                  >
-                    <input
-                      type="radio"
-                      value={t}
-                      {...register("token_in")}
-                      className="sr-only"
-                    />
-                    <span className="text-xl">
-                      {t === "adusd" ? "🇺🇸" : "🇳🇬"}
-                    </span>
-                    <p className="font-bold text-white text-sm uppercase">
-                      {t}
-                    </p>
-                  </label>
-                ))}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {(["adusd", "adngn", "adkes", "adghs", "adzar"] as const).map((t) => {
+                  const currencyCode = TOKEN_TO_CURRENCY[t];
+                  const currencyInfo = CURRENCY_INFO[currencyCode];
+                  return (
+                    <label
+                      key={t}
+                      className={`flex items-center gap-2 p-3 rounded-xl border cursor-pointer transition-all ${watch("token_in") === t ? "border-accent-orange bg-accent-orange/10" : "border-white/10 bg-white/3"}`}
+                    >
+                      <input
+                        type="radio"
+                        value={t}
+                        {...register("token_in", {
+                          onChange: (e: any) => {
+                            // Auto-update currency when token changes
+                            const newCurrency = TOKEN_TO_CURRENCY[e.target.value];
+                            setValue("currency", newCurrency as any);
+                          },
+                        })}
+                        className="sr-only"
+                      />
+                      <span className="text-lg">{currencyInfo.flag}</span>
+                      <p className="font-bold text-white text-xs uppercase">
+                        {t}
+                      </p>
+                    </label>
+                  );
+                })}
               </div>
             </div>
 
@@ -285,20 +366,54 @@ function SellPageContent({
                   {watch("token_in")}
                 </span>
               </div>
+              
+              {/* Fiat Amount Display */}
+              {amount && parseFloat(amount) > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-3 p-3 rounded-xl bg-gradient-to-r from-accent-green/10 to-brand-500/10 border border-accent-green/20"
+                >
+                  {ratesLoading ? (
+                    <div className="flex items-center justify-center gap-2">
+                      <LoadingSpinner size="sm" />
+                      <span className="text-xs text-white/50">Calculating amount...</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-white/50">You will receive:</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg font-bold text-accent-green">
+                          {CURRENCY_INFO[currency]?.flag} {fiatAmount.toFixed(2)}
+                        </span>
+                        <span className="text-sm font-semibold text-white/70">{currency}</span>
+                      </div>
+                    </div>
+                  )}
+                  {!ratesLoading && TOKEN_TO_CURRENCY[tokenType] !== currency && (
+                    <div className="mt-1 text-[10px] text-white/30 text-right">
+                      Rate: 1 {tokenType.toUpperCase()} ≈ {(fiatAmount / parseFloat(amount)).toFixed(4)} {currency}
+                    </div>
+                  )}
+                </motion.div>
+              )}
+
               {loadingCommitments && (
-                <p className="text-xs text-white/40 mt-1">
+                <div className="text-xs text-white/40 mt-1 flex items-center gap-1">
+                  <LoadingSpinner size="sm" />
                   Loading available balance...
-                </p>
+                </div>
               )}
               {!loadingCommitments && commitments.length === 0 && (
-                <p className="text-xs text-yellow-400 mt-1">
+                <div className="text-xs text-yellow-400 mt-1 flex items-center gap-1">
+                  <AlertCircle size={14} />
                   No {tokenType.toUpperCase()} purchased yet. Buy tokens first.
-                </p>
+                </div>
               )}
               {!loadingCommitments && commitments.length > 0 && (
-                <p className="text-xs text-green-400 mt-1">
-                  ✓ {commitments.length} commitment(s) available
-                </p>
+                <div className="text-xs text-green-400 mt-1 flex items-center gap-1">
+                  <CheckCircle2 size={14} /> {commitments.length} commitment(s) available
+                </div>
               )}
             </div>
           </div>
@@ -308,31 +423,25 @@ function SellPageContent({
             <h3 className="font-semibold text-white">Bank Details</h3>
 
             {/* Currency Selection */}
-            <div className="grid grid-cols-2 gap-3">
-              <label
-                className={`flex items-center gap-2 p-3 rounded-xl border cursor-pointer transition-all ${currency === "NGN" ? "border-brand-500 bg-brand-500/10" : "border-white/10"}`}
-              >
-                <input
-                  type="radio"
-                  value="NGN"
-                  {...register("currency")}
-                  className="sr-only"
-                />
-                <span>🇳🇬</span>
-                <span className="text-sm font-medium text-white">NGN</span>
-              </label>
-              <label
-                className={`flex items-center gap-2 p-3 rounded-xl border cursor-pointer transition-all ${currency === "USD" ? "border-brand-500 bg-brand-500/10" : "border-white/10"}`}
-              >
-                <input
-                  type="radio"
-                  value="USD"
-                  {...register("currency")}
-                  className="sr-only"
-                />
-                <span>🇺🇸</span>
-                <span className="text-sm font-medium text-white">USD</span>
-              </label>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {(["NGN", "USD", "KES", "GHS", "ZAR"] as const).map((curr) => {
+                const info = CURRENCY_INFO[curr];
+                return (
+                  <label
+                    key={curr}
+                    className={`flex items-center gap-2 p-2.5 rounded-xl border cursor-pointer transition-all ${currency === curr ? "border-brand-500 bg-brand-500/10" : "border-white/10"}`}
+                  >
+                    <input
+                      type="radio"
+                      value={curr}
+                      {...register("currency")}
+                      className="sr-only"
+                    />
+                    <span className="text-base">{info.flag}</span>
+                    <span className="text-xs font-medium text-white">{curr}</span>
+                  </label>
+                );
+              })}
             </div>
 
             {/* Bank Selection */}
@@ -387,22 +496,22 @@ function SellPageContent({
 
               {/* Account Verification Status */}
               {verifyAccountMutation.isPending && (
-                <p className="text-xs text-blue-400 mt-1 flex items-center gap-1">
-                  <span className="animate-spin">⏳</span> Verifying account...
-                </p>
+                <div className="text-xs text-blue-400 mt-1 flex items-center gap-1">
+                  <LoadingSpinner size="sm" /> Verifying account...
+                </div>
               )}
               {verifiedAccountName && (
-                <p className="text-xs text-green-400 mt-1 flex items-center gap-1">
-                  ✓ <span className="font-semibold">{verifiedAccountName}</span>
-                </p>
+                <div className="text-xs text-green-400 mt-1 flex items-center gap-1">
+                  <CheckCircle2 size={14} /> <span className="font-semibold">{verifiedAccountName}</span>
+                </div>
               )}
             </div>
           </div>
 
-          <div className="flex items-start gap-2 sm:gap-3 glass px-3 sm:px-4 py-3 rounded-xl border border-accent-purple/20 text-xs sm:text-sm">
-            <Info
+          <div className="flex items-start gap-2 sm:gap-3 glass px-3 sm:px-4 py-3 rounded-xl border border-accent-orange/20 text-xs sm:text-sm">
+            <Sparkles
               size={14}
-              className="text-accent-purple mt-0.5 shrink-0 sm:w-4 sm:h-4"
+              className="text-accent-orange mt-0.5 shrink-0 sm:w-4 sm:h-4"
             />
             <p className="text-white/50">
               Your bank details are processed once, never stored. Amount is
@@ -425,7 +534,7 @@ function SellPageContent({
               !verifiedAccountName ||
               commitments.length === 0
             }
-            className="btn-neon w-full py-3.5 sm:py-4 rounded-xl sm:rounded-2xl bg-gradient-to-r from-accent-purple to-brand-500 text-white font-bold text-base sm:text-lg shadow-lg shadow-accent-purple/30 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-accent-purple/50 transition-all active:scale-98 flex items-center justify-center gap-2"
+            className="btn-neon w-full py-3.5 sm:py-4 rounded-xl sm:rounded-2xl bg-gradient-to-r from-accent-orange to-brand-500 text-white font-bold text-base sm:text-lg shadow-lg shadow-accent-orange/30 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-accent-orange/50 transition-all active:scale-98 flex items-center justify-center gap-2"
           >
             {mutation.isPending || isExecuting ? (
               <>

@@ -16,7 +16,9 @@ export type UserCommitment = {
  * Fetch all buy commitments for the connected wallet.
  * These represent tokens the user has purchased and can now sell.
  */
-export function useUserCommitments(tokenType?: "adusd" | "adngn") {
+export function useUserCommitments(
+  tokenType?: "adusd" | "adngn" | "adkes" | "adghs" | "adzar",
+) {
   const { address } = useAccount();
 
   return useQuery({

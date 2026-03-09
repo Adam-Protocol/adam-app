@@ -47,7 +47,7 @@ export const AnimatedBackground = () => {
           ease: "easeInOut",
           delay: 2,
         }}
-        className="absolute top-1/3 right-1/4 w-[200px] sm:w-[300px] h-[200px] sm:h-[300px] bg-accent-purple rounded-full blur-[100px] sm:blur-[150px] opacity-8"
+        className="absolute top-1/3 right-1/4 w-[200px] sm:w-[300px] h-[200px] sm:h-[300px] bg-accent-orange rounded-full blur-[100px] sm:blur-[150px] opacity-8"
       />
 
       {/* Animated grid */}

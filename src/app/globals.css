@@ -212,6 +212,15 @@
   .active\:scale-98:active {
     transform: scale(0.98);
   }
+
+  /* Safe area padding for mobile devices */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
 }
 
 @layer utilities {

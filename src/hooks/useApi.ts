@@ -6,13 +6,13 @@ import { api } from "@/lib/api";
 export type BuyPayload = {
   wallet: string;
   amount_in: string;
-  token_out: "adusd" | "adngn";
+  token_out: "adusd" | "adngn" | "adkes" | "adghs" | "adzar";
   commitment: string;
 };
 
 export type SellPayload = {
   wallet: string;
-  token_in: "adusd" | "adngn";
+  token_in: "adusd" | "adngn" | "adkes" | "adghs" | "adzar";
   amount: string;
   nullifier: string;
   commitment: string;
@@ -37,9 +37,9 @@ export const useSell = () =>
 
 export type SwapPayload = {
   wallet: string;
-  token_in: "adusd" | "adngn";
+  token_in: "adusd" | "adngn" | "adkes" | "adghs" | "adzar";
   amount_in: string;
-  token_out: "adusd" | "adngn";
+  token_out: "adusd" | "adngn" | "adkes" | "adghs" | "adzar";
   min_amount_out: string;
   commitment: string;
 };

@@ -75,7 +75,7 @@ export function BankSearchDropdown({
         className={`
           w-full adam-input text-left flex items-center justify-between gap-3
           transition-all duration-200
-          ${isOpen ? "ring-2 ring-accent-purple/50 border-accent-purple/50" : ""}
+          ${isOpen ? "ring-2 ring-accent-orange/50 border-accent-orange/50" : ""}
           ${error ? "border-accent-red" : ""}
           ${disabled || loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:border-white/30 hover:bg-white/10"}
         `}
@@ -83,7 +83,7 @@ export function BankSearchDropdown({
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <Building2
             size={20}
-            className={`shrink-0 ${selectedBank ? "text-accent-purple" : "text-white/40"}`}
+            className={`shrink-0 ${selectedBank ? "text-accent-orange" : "text-white/40"}`}
           />
           <span
             className={`truncate text-sm font-medium ${selectedBank ? "text-white" : "text-white/50"}`}
@@ -97,7 +97,7 @@ export function BankSearchDropdown({
         </div>
         <ChevronDown
           size={18}
-          className={`shrink-0 transition-transform duration-200 ${isOpen ? "rotate-180 text-accent-purple" : "text-white/40"}`}
+          className={`shrink-0 transition-transform duration-200 ${isOpen ? "rotate-180 text-accent-orange" : "text-white/40"}`}
         />
       </button>
 
@@ -124,7 +124,7 @@ export function BankSearchDropdown({
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search banks..."
-                  className="w-full pl-10 pr-4 py-2.5 bg-white/10 border border-white/20 rounded-lg text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-accent-purple/50 text-sm font-medium"
+                  className="w-full pl-10 pr-4 py-2.5 bg-white/10 border border-white/20 rounded-lg text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-accent-orange/50 text-sm font-medium"
                 />
               </div>
             </div>
@@ -147,7 +147,7 @@ export function BankSearchDropdown({
                         transition-all duration-150
                         ${
                           bank.code === value
-                            ? "bg-accent-purple/30 text-white border border-accent-purple/50"
+                            ? "bg-accent-orange/30 text-white border border-accent-orange/50"
                             : "text-white/80 hover:bg-white/10 hover:text-white border border-transparent"
                         }
                       `}
@@ -155,7 +155,7 @@ export function BankSearchDropdown({
                       <div className="flex items-center gap-3 flex-1 min-w-0">
                         <Building2
                           size={18}
-                          className={`shrink-0 ${bank.code === value ? "text-accent-purple" : "text-white/40"}`}
+                          className={`shrink-0 ${bank.code === value ? "text-accent-orange" : "text-white/40"}`}
                         />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold truncate">
@@ -169,7 +169,7 @@ export function BankSearchDropdown({
                       {bank.code === value && (
                         <Check
                           size={18}
-                          className="text-accent-purple shrink-0"
+                          className="text-accent-orange shrink-0"
                         />
                       )}
                     </button>

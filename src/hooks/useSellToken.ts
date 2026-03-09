@@ -27,7 +27,7 @@ export function useSellToken() {
   const [isExecuting, setIsExecuting] = useState(false);
 
   const executeSell = async (
-    tokenIn: "adusd" | "adngn",
+    tokenIn: "adusd" | "adngn" | "adkes" | "adghs" | "adzar",
     amount: bigint,
     nullifier: string,
     commitment: string,
@@ -39,7 +39,15 @@ export function useSellToken() {
     setIsExecuting(true);
     try {
       const tokenInAddress =
-        tokenIn === "adusd" ? CONTRACTS.ADUSD : CONTRACTS.ADNGN;
+        tokenIn === "adusd"
+          ? CONTRACTS.ADUSD
+          : tokenIn === "adngn"
+            ? CONTRACTS.ADNGN
+            : tokenIn === "adkes"
+              ? CONTRACTS.ADKES
+              : tokenIn === "adghs"
+                ? CONTRACTS.ADGHS
+                : CONTRACTS.ADZAR;
       const amountU256 = uint256.bnToUint256(amount);
 
       // Create contract instance

@@ -31,7 +31,7 @@ export function useBuyToken() {
 
   const executeBuy = async (
     amountIn: bigint,
-    tokenOut: "adusd" | "adngn",
+    tokenOut: "adusd" | "adngn" | "adkes" | "adghs" | "adzar",
     commitment: string,
   ): Promise<string> => {
     if (!account) {
@@ -41,7 +41,15 @@ export function useBuyToken() {
     setIsExecuting(true);
     try {
       const tokenOutAddress =
-        tokenOut === "adusd" ? CONTRACTS.ADUSD : CONTRACTS.ADNGN;
+        tokenOut === "adusd"
+          ? CONTRACTS.ADUSD
+          : tokenOut === "adngn"
+            ? CONTRACTS.ADNGN
+            : tokenOut === "adkes"
+              ? CONTRACTS.ADKES
+              : tokenOut === "adghs"
+                ? CONTRACTS.ADGHS
+                : CONTRACTS.ADZAR;
       const amountU256 = uint256.bnToUint256(amountIn);
 
       // Create contract instance

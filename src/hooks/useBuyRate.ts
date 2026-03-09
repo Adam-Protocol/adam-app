@@ -39,7 +39,10 @@ const SWAP_ABI = [
 
 const RATE_PRECISION = BigInt("1000000000000000000"); // 1e18
 
-export function useBuyRate(tokenOut: "adusd" | "adngn", amountIn: string) {
+export function useBuyRate(
+  tokenOut: "adusd" | "adngn" | "adkes" | "adghs" | "adzar",
+  amountIn: string,
+) {
   const { provider } = useProvider();
   const [rate, setRate] = useState<bigint | null>(null);
   const [feeBps, setFeeBps] = useState<number>(0);
@@ -67,7 +70,15 @@ export function useBuyRate(tokenOut: "adusd" | "adngn", amountIn: string) {
         const contract = new Contract({ abi: SWAP_ABI, address: CONTRACTS.ADAM_SWAP, providerOrAccount: provider });
 
         const tokenOutAddress =
-          tokenOut === "adusd" ? CONTRACTS.ADUSD : CONTRACTS.ADNGN;
+          tokenOut === "adusd"
+            ? CONTRACTS.ADUSD
+            : tokenOut === "adngn"
+              ? CONTRACTS.ADNGN
+              : tokenOut === "adkes"
+                ? CONTRACTS.ADKES
+                : tokenOut === "adghs"
+                  ? CONTRACTS.ADGHS
+                  : CONTRACTS.ADZAR;
 
         console.log("Fetching rate from contract...");
         console.log("USDC:", CONTRACTS.USDC);

@@ -4,7 +4,18 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAccount } from "@starknet-react/core";
 import { useQuery } from "@tanstack/react-query";
-import { Activity, ExternalLink, X } from "lucide-react";
+import { 
+  Activity, 
+  ExternalLink, 
+  X, 
+  Filter, 
+  Clock, 
+  CheckCircle, 
+  XCircle,
+  ShoppingCart,
+  TrendingUp,
+  RefreshCw
+} from "lucide-react";
 import axios from "axios";
 import { clsx } from "clsx";
 import { WalletGuard } from "@/components/auth/WalletGuard";
@@ -18,15 +29,16 @@ const STATUS_CONFIG: Record<string, { color: string; bg: string }> = {
   processing: { color: "text-accent-cyan", bg: "bg-accent-cyan/15" },
 };
 
-const TYPE_CONFIG: Record<string, { emoji: string; label: string }> = {
-  buy: { emoji: "⬇️", label: "Buy" },
-  sell: { emoji: "⬆️", label: "Sell" },
-  swap: { emoji: "🔄", label: "Swap" },
+const TYPE_CONFIG: Record<string, { icon: any; label: string; color: string }> = {
+  buy: { icon: ShoppingCart, label: "Buy", color: "text-brand-400" },
+  sell: { icon: TrendingUp, label: "Sell", color: "text-accent-orange" },
+  swap: { icon: RefreshCw, label: "Swap", color: "text-accent-cyan" },
 };
 
 function TxRowDesktop({ tx, onClick }: { tx: any; onClick: () => void }) {
   const status = STATUS_CONFIG[tx.status] ?? STATUS_CONFIG.pending;
-  const type = TYPE_CONFIG[tx.type] ?? { emoji: "📄", label: tx.type };
+  const type = TYPE_CONFIG[tx.type] ?? { icon: Activity, label: tx.type, color: "text-white" };
+  const TypeIcon = type.icon;
 
   return (
     <motion.tr
@@ -37,7 +49,9 @@ function TxRowDesktop({ tx, onClick }: { tx: any; onClick: () => void }) {
     >
       <td className="px-5 py-4">
         <div className="flex items-center gap-2">
-          <span className="text-base">{type.emoji}</span>
+          <div className={`w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center ${type.color}`}>
+            <TypeIcon size={16} />
+          </div>
           <span className="font-medium text-white text-sm capitalize">
             {type.label}
           </span>
@@ -79,7 +93,8 @@ function TxRowDesktop({ tx, onClick }: { tx: any; onClick: () => void }) {
 
 function TxCardMobile({ tx, onClick }: { tx: any; onClick: () => void }) {
   const status = STATUS_CONFIG[tx.status] ?? STATUS_CONFIG.pending;
-  const type = TYPE_CONFIG[tx.type] ?? { emoji: "📄", label: tx.type };
+  const type = TYPE_CONFIG[tx.type] ?? { icon: Activity, label: tx.type, color: "text-white" };
+  const TypeIcon = type.icon;
 
   return (
     <motion.div
@@ -89,8 +104,10 @@ function TxCardMobile({ tx, onClick }: { tx: any; onClick: () => void }) {
       className="glass-strong rounded-xl p-4 border border-white/10 hover:border-white/20 transition-all cursor-pointer"
     >
       <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <span className="text-xl">{type.emoji}</span>
+        <div className="flex items-center gap-3">
+          <div className={`w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center ${type.color} shrink-0`}>
+            <TypeIcon size={18} />
+          </div>
           <div>
             <p className="font-semibold text-white text-sm capitalize">
               {type.label}
@@ -259,6 +276,7 @@ function ActivityPageContent({
 
         {/* Filter */}
         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+          <Filter size={14} className="text-white/40 shrink-0" />
           {["all", "buy", "sell", "swap"].map((t) => (
             <button
               key={t}
