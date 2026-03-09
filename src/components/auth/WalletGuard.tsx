@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useAccount } from "@starknet-react/core";
+import { useMultiChainWallet } from "@/hooks/useMultiChainWallet";
 import { useRouter } from "next/navigation";
 
 interface WalletGuardProps {
@@ -9,7 +9,7 @@ interface WalletGuardProps {
 }
 
 export function WalletGuard({ children }: WalletGuardProps) {
-  const { isConnected } = useAccount();
+  const { isConnected } = useMultiChainWallet();
   const router = useRouter();
 
   useEffect(() => {
