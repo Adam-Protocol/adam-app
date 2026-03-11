@@ -1,7 +1,6 @@
 import { Navbar } from "@/components/layout/Navbar";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { ConnectionStatus } from "@/components/ui/ConnectionStatus";
-import { Toaster } from "sonner";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -12,7 +11,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         {children}
       </main>
       <BottomNav />
-      <Toaster position="top-center" richColors />
     </div>
   );
 }

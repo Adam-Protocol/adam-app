@@ -2,7 +2,8 @@
 
 import { motion } from "framer-motion";
 import { useMultiChainWallet } from "@/hooks/useMultiChainWallet";
-import { useMutation } from "@tanstack/react-query";
+import { useAccount } from "@starknet-react/core";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { ArrowUpRight, Info, Sparkles, CheckCircle2, AlertCircle } from "lucide-react";
@@ -97,6 +98,7 @@ function SellPageContent({
   const currency = watch("currency");
   const accountNumber = watch("bank_account");
   const bankCode = watch("bank_code");
+  const amount = watch("amount");
 
   const [verifiedAccountName, setVerifiedAccountName] = useState<string | null>(
     null,
@@ -107,6 +109,52 @@ function SellPageContent({
     useUserCommitments(tokenType);
   const { getSecret } = useCommitment();
   const { executeSell, isExecuting } = useSellToken();
+
+  // Fetch all rates
+  const { data: ratesData, isLoading: ratesLoading } = useQuery({
+    queryKey: ["rates"],
+    queryFn: () => axios.get(`${API}/swap/rates`).then((r) => r.data),
+    refetchInterval: 30_000,
+    retry: 3,
+  });
+
+  // Calculate fiat amount user will receive
+  const calculateFiatAmount = () => {
+    if (!amount || !ratesData || parseFloat(amount) <= 0) return 0;
+
+    const tokenCurrency = TOKEN_TO_CURRENCY[tokenType];
+    
+    // If selling the same currency (e.g., ADNGN -> NGN), it's 1:1
+    if (tokenCurrency === currency) {
+      return parseFloat(amount);
+    }
+
+    // If selling ADUSD to another currency
+    if (tokenType === "adusd") {
+      const rate = ratesData[currency]?.rate || 0;
+      return parseFloat(amount) * rate;
+    }
+
+    // If selling another currency to USD
+    if (currency === "USD") {
+      const rate = ratesData[tokenCurrency]?.rate || 0;
+      return rate > 0 ? parseFloat(amount) / rate : 0;
+    }
+
+    // Cross-currency conversion (e.g., ADNGN -> KES)
+    const fromRate = ratesData[tokenCurrency]?.rate || 0;
+    const toRate = ratesData[currency]?.rate || 0;
+    
+    if (fromRate > 0) {
+      // Convert to USD first, then to target currency
+      const usdAmount = parseFloat(amount) / fromRate;
+      return usdAmount * toRate;
+    }
+
+    return 0;
+  };
+
+  const fiatAmount = calculateFiatAmount();
 
   // Fetch banks based on selected currency
   const country = CURRENCY_TO_COUNTRY[currency] || "NG";
@@ -319,6 +367,38 @@ function SellPageContent({
                   {watch("token_in")}
                 </span>
               </div>
+              
+              {/* Fiat Amount Display */}
+              {amount && parseFloat(amount) > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-3 p-3 rounded-xl bg-gradient-to-r from-accent-green/10 to-brand-500/10 border border-accent-green/20"
+                >
+                  {ratesLoading ? (
+                    <div className="flex items-center justify-center gap-2">
+                      <LoadingSpinner size="sm" />
+                      <span className="text-xs text-white/50">Calculating amount...</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-white/50">You will receive:</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg font-bold text-accent-green">
+                          {CURRENCY_INFO[currency]?.flag} {fiatAmount.toFixed(2)}
+                        </span>
+                        <span className="text-sm font-semibold text-white/70">{currency}</span>
+                      </div>
+                    </div>
+                  )}
+                  {!ratesLoading && TOKEN_TO_CURRENCY[tokenType] !== currency && (
+                    <div className="mt-1 text-[10px] text-white/30 text-right">
+                      Rate: 1 {tokenType.toUpperCase()} ≈ {(fiatAmount / parseFloat(amount)).toFixed(4)} {currency}
+                    </div>
+                  )}
+                </motion.div>
+              )}
+
               {loadingCommitments && (
                 <div className="text-xs text-white/40 mt-1 flex items-center gap-1">
                   <LoadingSpinner size="sm" />
