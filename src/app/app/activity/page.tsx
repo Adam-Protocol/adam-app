@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useAccount } from "@starknet-react/core";
+import { useMultiChainWallet } from "@/hooks/useMultiChainWallet";
 import { useQuery } from "@tanstack/react-query";
 import { 
   Activity, 
@@ -219,7 +219,7 @@ function TxDrawer({ tx, onClose }: { tx: any; onClose: () => void }) {
 }
 
 export default function ActivityPage() {
-  const { address, isConnected } = useAccount();
+  const { address, isConnected } = useMultiChainWallet();
   const [page, setPage] = useState(1);
   const [filter, setFilter] = useState("all");
   const [selected, setSelected] = useState<any>(null);

@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useMultiChainWallet } from "@/hooks/useMultiChainWallet";
 import { useAccount } from "@starknet-react/core";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
@@ -31,7 +32,7 @@ type SellForm = {
 };
 
 export default function SellPage() {
-  const { address, isConnected } = useAccount();
+  const { address, isConnected } = useMultiChainWallet();
   const {
     register,
     handleSubmit,

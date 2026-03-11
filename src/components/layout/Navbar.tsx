@@ -16,7 +16,8 @@ import {
   Activity
 } from "lucide-react";
 import { clsx } from "clsx";
-import { useWallet } from "@/hooks/useWallet";
+import { useMultiChainWallet } from "@/hooks/useMultiChainWallet";
+import { ChainSelector } from "@/components/ui/ChainSelector";
 import Image from "next/image";
 
 const NAV_LINKS = [
@@ -32,7 +33,7 @@ export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
-  const { shortAddress, isConnected, connectWallet, disconnect, address } = useWallet();
+  const { shortAddress, isConnected, connectWallet, disconnect, address } = useMultiChainWallet();
   const isLandingPage = pathname === "/";
 
   // Redirect to dashboard after connecting wallet on landing page
@@ -125,8 +126,11 @@ export function Navbar() {
             })}
           </nav>
 
-          {/* Wallet Button - Mobile & Desktop */}
-          <div className="flex items-center gap-3">
+          {/* Chain Selector & Wallet Button - Mobile & Desktop */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Chain Selector - Always visible */}
+            <ChainSelector />
+            
             {isConnected && shortAddress ? (
               <motion.button
                 whileHover={{ scale: 1.02 }}

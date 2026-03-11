@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useAccount } from "@starknet-react/core";
+import { useMultiChainWallet } from "@/hooks/useMultiChainWallet";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -37,7 +37,7 @@ const TOKEN_INFO: Record<
 };
 
 export default function SwapPage() {
-  const { address, isConnected } = useAccount();
+  const { address, isConnected } = useMultiChainWallet();
   const { register, handleSubmit, watch, setValue } = useForm<SwapForm>({
     defaultValues: { token_in: "adusd", token_out: "adngn", amount_in: "" },
   });

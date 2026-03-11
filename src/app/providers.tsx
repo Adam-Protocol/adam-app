@@ -13,6 +13,7 @@ import { sepolia, mainnet } from "@starknet-react/chains";
 import { Toaster } from "sonner";
 import { InjectedConnector } from "starknetkit/injected";
 import { RpcProvider, constants } from "starknet";
+import { ChainProvider } from "@/contexts/ChainContext";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -52,26 +53,28 @@ export function Providers({ children }: { children: React.ReactNode }) {
         explorer={voyager}
         autoConnect
       >
-        <HeroUIProvider>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="dark"
-            forcedTheme="dark"
-          >
-            {children}
-            <Toaster
-              richColors
-              position="top-right"
-              toastOptions={{
-                style: {
-                  background: "rgba(10, 15, 30, 0.95)",
-                  border: "1px solid rgba(91, 111, 243, 0.3)",
-                  color: "#e2e8f0",
-                },
-              }}
-            />
-          </ThemeProvider>
-        </HeroUIProvider>
+        <ChainProvider>
+          <HeroUIProvider>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="dark"
+              forcedTheme="dark"
+            >
+              {children}
+              <Toaster
+                richColors
+                position="top-right"
+                toastOptions={{
+                  style: {
+                    background: "rgba(10, 15, 30, 0.95)",
+                    border: "1px solid rgba(91, 111, 243, 0.3)",
+                    color: "#e2e8f0",
+                  },
+                }}
+              />
+            </ThemeProvider>
+          </HeroUIProvider>
+        </ChainProvider>
       </StarknetConfig>
     </QueryClientProvider>
   );
