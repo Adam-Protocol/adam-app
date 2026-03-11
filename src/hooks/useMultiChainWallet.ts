@@ -6,7 +6,8 @@ import { useMemo } from "react";
  * for wallet operations across different blockchains.
  */
 export function useMultiChainWallet() {
-  const { currentChain, adapter, account, isConnected, connect, disconnect } = useChain();
+  const { currentChain, adapter, account, isConnected, connect, disconnect } =
+    useChain();
 
   const shortAddress = useMemo(() => {
     if (!account?.address) return null;
@@ -18,19 +19,19 @@ export function useMultiChainWallet() {
     // Chain info
     currentChain,
     chainType: currentChain,
-    
+
     // Account info
     address: account?.address,
     shortAddress,
     account,
-    
+
     // Connection state
     isConnected,
-    
+
     // Actions
     connectWallet: connect,
     disconnect,
-    
+
     // Adapter for advanced operations
     adapter,
   };

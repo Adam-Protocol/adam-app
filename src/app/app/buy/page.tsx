@@ -6,7 +6,13 @@ import { useMultiChainWallet } from "@/hooks/useMultiChainWallet";
 import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { ArrowDownRight, Info, CheckCircle2, Sparkles, AlertTriangle } from "lucide-react";
+import {
+  ArrowDownRight,
+  Info,
+  CheckCircle2,
+  Sparkles,
+  AlertTriangle,
+} from "lucide-react";
 import axios from "axios";
 import { hash } from "starknet";
 import { WalletGuard } from "@/components/auth/WalletGuard";
@@ -51,7 +57,10 @@ export default function BuyPage() {
 }
 
 // Token display info
-const TOKEN_INFO: Record<string, { flag: string; name: string; currency: string }> = {
+const TOKEN_INFO: Record<
+  string,
+  { flag: string; name: string; currency: string }
+> = {
   adusd: { flag: "🇺🇸", name: "Adam USD", currency: "USD" },
   adngn: { flag: "🇳🇬", name: "Adam NGN", currency: "NGN" },
   adkes: { flag: "🇰🇪", name: "Adam KES", currency: "KES" },
@@ -209,38 +218,38 @@ function BuyPageContent({
               Receive Token
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {(["adusd", "adngn", "adkes", "adghs", "adzar"] as const).map((t) => {
-                const info = TOKEN_INFO[t];
-                return (
-                  <label
-                    key={t}
-                    className={`relative flex flex-col gap-1 p-3 rounded-xl border cursor-pointer transition-all ${
-                      tokenOut === t
-                        ? "border-brand-500 bg-brand-500/10"
-                        : "border-white/10 bg-white/3 hover:border-white/20"
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      value={t}
-                      {...register("token_out")}
-                      className="sr-only"
-                    />
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg">{info.flag}</span>
-                      <p className="font-bold text-white text-xs uppercase">
-                        {t}
-                      </p>
-                    </div>
-                    <p className="text-[10px] text-white/40">
-                      {info.name}
-                    </p>
-                    {tokenOut === t && (
-                      <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-brand-400" />
-                    )}
-                  </label>
-                );
-              })}
+              {(["adusd", "adngn", "adkes", "adghs", "adzar"] as const).map(
+                (t) => {
+                  const info = TOKEN_INFO[t];
+                  return (
+                    <label
+                      key={t}
+                      className={`relative flex flex-col gap-1 p-3 rounded-xl border cursor-pointer transition-all ${
+                        tokenOut === t
+                          ? "border-brand-500 bg-brand-500/10"
+                          : "border-white/10 bg-white/3 hover:border-white/20"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        value={t}
+                        {...register("token_out")}
+                        className="sr-only"
+                      />
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">{info.flag}</span>
+                        <p className="font-bold text-white text-xs uppercase">
+                          {t}
+                        </p>
+                      </div>
+                      <p className="text-[10px] text-white/40">{info.name}</p>
+                      {tokenOut === t && (
+                        <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-brand-400" />
+                      )}
+                    </label>
+                  );
+                },
+              )}
             </div>
 
             {/* Amount */}

@@ -17,35 +17,35 @@ export class StacksAdapter implements ChainAdapter {
 
     try {
       const { request } = await import("@stacks/connect");
-      
+
       // Use stx_getAddresses to trigger wallet connection
       // This will show the wallet selection popup
       const addressResponse = await request("stx_getAddresses", {});
-      
+
       if (addressResponse?.addresses?.[0]?.address) {
         // Now get full account details
         const accountResponse = await request("stx_getAccounts", {});
-        
+
         if (accountResponse?.accounts?.[0]) {
           this.currentAccount = {
             address: accountResponse.accounts[0].address,
             publicKey: accountResponse.accounts[0].publicKey,
             chainType: ChainType.STACKS,
           };
-          
+
           return this.currentAccount;
         }
-        
+
         // Fallback to address-only if accounts not available
         this.currentAccount = {
           address: addressResponse.addresses[0].address,
           publicKey: "", // Not available from addresses endpoint
           chainType: ChainType.STACKS,
         };
-        
+
         return this.currentAccount;
       }
-      
+
       return null;
     } catch (error) {
       console.error("Stacks wallet connection failed:", error);
@@ -75,36 +75,40 @@ export class StacksAdapter implements ChainAdapter {
           const { getLocalStorage } = await import("@stacks/connect");
           return getLocalStorage();
         };
-        
-        getLocalStorage().then((userData) => {
-          if (userData?.addresses?.stx?.[0]?.address) {
-            // Note: publicKey is not available in localStorage (stripped for security)
-            this.currentAccount = {
-              address: userData.addresses.stx[0].address,
-              publicKey: "", // Not available from storage
-              chainType: ChainType.STACKS,
-            };
-          }
-        }).catch((error) => {
-          console.error("Failed to get Stacks account from storage:", error);
-        });
+
+        getLocalStorage()
+          .then((userData) => {
+            if (userData?.addresses?.stx?.[0]?.address) {
+              // Note: publicKey is not available in localStorage (stripped for security)
+              this.currentAccount = {
+                address: userData.addresses.stx[0].address,
+                publicKey: "", // Not available from storage
+                chainType: ChainType.STACKS,
+              };
+            }
+          })
+          .catch((error) => {
+            console.error("Failed to get Stacks account from storage:", error);
+          });
       } catch (error) {
         console.error("Failed to get Stacks account from storage:", error);
       }
     }
-    
+
     return this.currentAccount;
   }
 
   isConnected(): boolean {
     if (typeof window === "undefined") return false;
-    
+
     try {
       // Use dynamic import in an async context
-      import("@stacks/connect").then(({ isConnected }) => {
-        return isConnected();
-      }).catch(() => false);
-      
+      import("@stacks/connect")
+        .then(({ isConnected }) => {
+          return isConnected();
+        })
+        .catch(() => false);
+
       // For synchronous check, rely on currentAccount
       return this.currentAccount !== null;
     } catch {
@@ -112,7 +116,9 @@ export class StacksAdapter implements ChainAdapter {
     }
   }
 
-  async executeTransaction(params: TransactionParams): Promise<TransactionResult> {
+  async executeTransaction(
+    params: TransactionParams,
+  ): Promise<TransactionResult> {
     if (typeof window === "undefined") {
       throw new Error("Transactions only work in browser");
     }
@@ -123,10 +129,10 @@ export class StacksAdapter implements ChainAdapter {
 
     try {
       const { request } = await import("@stacks/connect");
-      
+
       // Build transaction options based on function name
       const txOptions = this.buildTransactionOptions(params);
-      
+
       // Request transaction via Stacks Connect
       const response = await request("stx_callContract", txOptions);
 
@@ -143,7 +149,7 @@ export class StacksAdapter implements ChainAdapter {
   private buildTransactionOptions(params: TransactionParams): any {
     // Parse contract address (format: address.contract-name)
     const [contractAddress, contractName] = params.contractAddress.split(".");
-    
+
     return {
       contractAddress,
       contractName,
@@ -181,7 +187,7 @@ export class StacksAdapter implements ChainAdapter {
           }),
         },
       );
-      
+
       const data = await response.json();
       return BigInt(data.result || "0");
     } catch (error) {
@@ -199,7 +205,12 @@ export class StacksAdapter implements ChainAdapter {
     return this.executeTransaction({
       contractAddress: tokenAddress,
       functionName: "transfer",
-      args: [amount.toString(), this.currentAccount?.address, spenderAddress, null],
+      args: [
+        amount.toString(),
+        this.currentAccount?.address,
+        spenderAddress,
+        null,
+      ],
     });
   }
 }

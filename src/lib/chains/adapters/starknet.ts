@@ -27,7 +27,7 @@ export class StarknetAdapter implements ChainAdapter {
 
   async connect(): Promise<WalletAccount | null> {
     if (!this.connectFn) return null;
-    
+
     const connector = await this.connectFn();
     if (!connector || !this.accountData?.address) {
       return null;
@@ -48,7 +48,7 @@ export class StarknetAdapter implements ChainAdapter {
 
   getAccount(): WalletAccount | null {
     if (!this.accountData?.address) return null;
-    
+
     return {
       address: this.accountData.address,
       chainType: ChainType.STARKNET,
@@ -59,7 +59,9 @@ export class StarknetAdapter implements ChainAdapter {
     return !!this.accountData?.isConnected;
   }
 
-  async executeTransaction(params: TransactionParams): Promise<TransactionResult> {
+  async executeTransaction(
+    params: TransactionParams,
+  ): Promise<TransactionResult> {
     if (!this.account) {
       throw new Error("Wallet not connected");
     }
@@ -96,7 +98,12 @@ export class StarknetAdapter implements ChainAdapter {
         {
           name: "balanceOf",
           type: "function",
-          inputs: [{ name: "account", type: "core::starknet::contract_address::ContractAddress" }],
+          inputs: [
+            {
+              name: "account",
+              type: "core::starknet::contract_address::ContractAddress",
+            },
+          ],
           outputs: [{ type: "core::integer::u256" }],
           state_mutability: "view",
         },
@@ -124,7 +131,10 @@ export class StarknetAdapter implements ChainAdapter {
           name: "approve",
           type: "function",
           inputs: [
-            { name: "spender", type: "core::starknet::contract_address::ContractAddress" },
+            {
+              name: "spender",
+              type: "core::starknet::contract_address::ContractAddress",
+            },
             { name: "amount", type: "core::integer::u256" },
           ],
           outputs: [{ type: "core::bool" }],

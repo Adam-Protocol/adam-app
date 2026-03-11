@@ -32,11 +32,12 @@ const STATUS_CONFIG: Record<string, { color: string; bg: string }> = {
   processing: { color: "text-accent-cyan", bg: "bg-accent-cyan/15" },
 };
 
-const TYPE_CONFIG: Record<string, { icon: any; label: string; color: string }> = {
-  buy: { icon: ShoppingCart, label: "Buy", color: "text-brand-400" },
-  sell: { icon: TrendingUp, label: "Sell", color: "text-accent-orange" },
-  swap: { icon: RefreshCw, label: "Swap", color: "text-accent-cyan" },
-};
+const TYPE_CONFIG: Record<string, { icon: any; label: string; color: string }> =
+  {
+    buy: { icon: ShoppingCart, label: "Buy", color: "text-brand-400" },
+    sell: { icon: TrendingUp, label: "Sell", color: "text-accent-orange" },
+    swap: { icon: RefreshCw, label: "Swap", color: "text-accent-cyan" },
+  };
 
 function StatCard({ label, value, icon: Icon, color }: any) {
   return (
@@ -47,18 +48,26 @@ function StatCard({ label, value, icon: Icon, color }: any) {
     >
       <div className="flex items-center justify-between">
         <span className="text-white/50 text-xs">{label}</span>
-        <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${color}`}>
+        <div
+          className={`w-8 h-8 rounded-xl flex items-center justify-center ${color}`}
+        >
           <Icon size={16} className="text-white" />
         </div>
       </div>
-      <p className="text-xl sm:text-2xl font-black text-white truncate">{value}</p>
+      <p className="text-xl sm:text-2xl font-black text-white truncate">
+        {value}
+      </p>
     </motion.div>
   );
 }
 
 function TxCard({ tx }: { tx: any }) {
   const status = STATUS_CONFIG[tx.status] ?? STATUS_CONFIG.pending;
-  const type = TYPE_CONFIG[tx.type] ?? { icon: ShoppingCart, label: tx.type, color: "text-white" };
+  const type = TYPE_CONFIG[tx.type] ?? {
+    icon: ShoppingCart,
+    label: tx.type,
+    color: "text-white",
+  };
   const TypeIcon = type.icon;
 
   return (
@@ -69,7 +78,9 @@ function TxCard({ tx }: { tx: any }) {
     >
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center ${type.color} shrink-0`}>
+          <div
+            className={`w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center ${type.color} shrink-0`}
+          >
             <TypeIcon size={18} />
           </div>
           <div>
@@ -153,8 +164,8 @@ function DashboardPageContent({
     queryFn: () =>
       address
         ? axios
-          .get(`${API}/activity/${address}`, { params: { limit: 3 } })
-          .then((r) => r.data)
+            .get(`${API}/activity/${address}`, { params: { limit: 3 } })
+            .then((r) => r.data)
         : null,
     enabled: !!address,
     retry: 2,
@@ -163,59 +174,59 @@ function DashboardPageContent({
   // Prepare balance data for modal
   const balanceOptions = balances
     ? [
-      {
-        id: "usdc",
-        label: "USDC Balance",
-        symbol: "USDC",
-        value: balances.balances.usdc.formatted,
-        icon: DollarSign,
-        color: "from-blue-500 to-blue-600",
-      },
-      {
-        id: "adusd",
-        label: "ADUSD Balance",
-        symbol: "ADUSD",
-        value: balances.balances.adusd.formatted,
-        icon: DollarSign,
-        color: "from-accent-cyan to-brand-500",
-      },
-      {
-        id: "adngn",
-        label: "Nigerian Naira",
-        symbol: "₦",
-        value: `₦${balances.balances.adngn.formatted}`,
-        icon: Coins,
-        color: "from-accent-orange to-brand-500",
-        flag: "🇳🇬",
-      },
-      {
-        id: "adkes",
-        label: "Kenyan Shilling",
-        symbol: "KSh",
-        value: `KSh${balances.balances.adkes.formatted}`,
-        icon: Coins,
-        color: "from-green-500 to-brand-500",
-        flag: "🇰🇪",
-      },
-      {
-        id: "adghs",
-        label: "Ghanaian Cedi",
-        symbol: "₵",
-        value: `₵${balances.balances.adghs.formatted}`,
-        icon: Coins,
-        color: "from-yellow-500 to-brand-500",
-        flag: "🇬🇭",
-      },
-      {
-        id: "adzar",
-        label: "South African Rand",
-        symbol: "R",
-        value: `R${balances.balances.adzar.formatted}`,
-        icon: Coins,
-        color: "from-blue-500 to-brand-500",
-        flag: "🇿🇦",
-      },
-    ]
+        {
+          id: "usdc",
+          label: "USDC Balance",
+          symbol: "USDC",
+          value: balances.balances.usdc.formatted,
+          icon: DollarSign,
+          color: "from-blue-500 to-blue-600",
+        },
+        {
+          id: "adusd",
+          label: "ADUSD Balance",
+          symbol: "ADUSD",
+          value: balances.balances.adusd.formatted,
+          icon: DollarSign,
+          color: "from-accent-cyan to-brand-500",
+        },
+        {
+          id: "adngn",
+          label: "Nigerian Naira",
+          symbol: "₦",
+          value: `₦${balances.balances.adngn.formatted}`,
+          icon: Coins,
+          color: "from-accent-orange to-brand-500",
+          flag: "🇳🇬",
+        },
+        {
+          id: "adkes",
+          label: "Kenyan Shilling",
+          symbol: "KSh",
+          value: `KSh${balances.balances.adkes.formatted}`,
+          icon: Coins,
+          color: "from-green-500 to-brand-500",
+          flag: "🇰🇪",
+        },
+        {
+          id: "adghs",
+          label: "Ghanaian Cedi",
+          symbol: "₵",
+          value: `₵${balances.balances.adghs.formatted}`,
+          icon: Coins,
+          color: "from-yellow-500 to-brand-500",
+          flag: "🇬🇭",
+        },
+        {
+          id: "adzar",
+          label: "South African Rand",
+          symbol: "R",
+          value: `R${balances.balances.adzar.formatted}`,
+          icon: Coins,
+          color: "from-blue-500 to-brand-500",
+          flag: "🇿🇦",
+        },
+      ]
     : [];
 
   const currentBalance = balanceOptions.find((b) => b.id === selectedBalance);
@@ -231,8 +242,18 @@ function DashboardPageContent({
             </h1>
           </div>
           <button className="glass px-3 py-2 rounded-xl border border-white/10 text-white/70 hover:text-white transition-colors md:hidden">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
+              />
             </svg>
           </button>
         </div>
@@ -290,15 +311,13 @@ function DashboardPageContent({
         >
           <div className="flex items-center justify-center gap-3 min-h-[3rem] mb-2">
             <p className="text-3xl font-bold text-white break-all">
-              {isBalanceHidden ? (
-                "••••••"
-              ) : balancesLoading ? (
-                "..."
-              ) : balancesError ? (
-                "$0.00"
-              ) : (
-                currentBalance?.value || "$0.00"
-              )}
+              {isBalanceHidden
+                ? "••••••"
+                : balancesLoading
+                  ? "..."
+                  : balancesError
+                    ? "$0.00"
+                    : currentBalance?.value || "$0.00"}
             </p>
             <button
               onClick={() => setIsBalanceHidden(!isBalanceHidden)}
@@ -317,11 +336,23 @@ function DashboardPageContent({
                   whileTap={{ scale: 0.95 }}
                   className="w-16 h-16 rounded-full border border-blue-500/30 hover:border-blue-500/50 flex items-center justify-center transition-all backdrop-blur-sm"
                 >
-                  <svg className="w-7 h-7 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <svg
+                    className="w-7 h-7 text-blue-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
                   </svg>
                 </motion.div>
-                <p className="text-xs font-medium text-white text-center">Bills & Airtime</p>
+                <p className="text-xs font-medium text-white text-center">
+                  Bills & Airtime
+                </p>
               </button>
 
               <button
@@ -332,11 +363,23 @@ function DashboardPageContent({
                   whileTap={{ scale: 0.95 }}
                   className="w-16 h-16 rounded-full border border-accent-cyan/30 hover:border-accent-cyan/50 flex items-center justify-center transition-all backdrop-blur-sm"
                 >
-                  <svg className="w-7 h-7 text-accent-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
+                  <svg
+                    className="w-7 h-7 text-accent-cyan"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"
+                    />
                   </svg>
                 </motion.div>
-                <p className="text-xs font-medium text-white text-center">Gift Cards</p>
+                <p className="text-xs font-medium text-white text-center">
+                  Gift Cards
+                </p>
               </button>
 
               <button
@@ -347,11 +390,23 @@ function DashboardPageContent({
                   whileTap={{ scale: 0.95 }}
                   className="w-16 h-16 rounded-full border border-accent-orange/30 hover:border-accent-orange/50 flex items-center justify-center transition-all backdrop-blur-sm"
                 >
-                  <svg className="w-7 h-7 text-accent-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  <svg
+                    className="w-7 h-7 text-accent-orange"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
                   </svg>
                 </motion.div>
-                <p className="text-xs font-medium text-white text-center">Invoice</p>
+                <p className="text-xs font-medium text-white text-center">
+                  Invoice
+                </p>
               </button>
             </div>
           </div>
@@ -455,8 +510,18 @@ function DashboardPageContent({
               whileTap={{ scale: 0.95 }}
               className="w-20 h-20 rounded-2xl border border-blue-500/30 hover:border-blue-500/50 flex items-center justify-center transition-all backdrop-blur-sm group-hover:bg-blue-500/5"
             >
-              <svg className="w-9 h-9 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <svg
+                className="w-9 h-9 text-blue-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
               </svg>
             </motion.div>
             <p className="text-sm font-medium text-white">Bills & Airtime</p>
@@ -470,8 +535,18 @@ function DashboardPageContent({
               whileTap={{ scale: 0.95 }}
               className="w-20 h-20 rounded-2xl border border-accent-cyan/30 hover:border-accent-cyan/50 flex items-center justify-center transition-all backdrop-blur-sm group-hover:bg-accent-cyan/5"
             >
-              <svg className="w-9 h-9 text-accent-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
+              <svg
+                className="w-9 h-9 text-accent-cyan"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"
+                />
               </svg>
             </motion.div>
             <p className="text-sm font-medium text-white">Gift Cards</p>
@@ -485,8 +560,18 @@ function DashboardPageContent({
               whileTap={{ scale: 0.95 }}
               className="w-20 h-20 rounded-2xl border border-accent-orange/30 hover:border-accent-orange/50 flex items-center justify-center transition-all backdrop-blur-sm group-hover:bg-accent-orange/5"
             >
-              <svg className="w-9 h-9 text-accent-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              <svg
+                className="w-9 h-9 text-accent-orange"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
               </svg>
             </motion.div>
             <p className="text-sm font-medium text-white">Invoice</p>

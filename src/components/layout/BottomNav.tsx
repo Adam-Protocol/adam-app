@@ -41,21 +41,25 @@ export function BottomNav() {
                   whileTap={{ scale: 0.9 }}
                   className={clsx(
                     "relative flex items-center justify-center w-11 h-11 rounded-xl transition-all",
-                    isActive && "bg-brand-500/15"
+                    isActive && "bg-brand-500/15",
                   )}
                 >
                   <Icon
                     size={22}
                     className={clsx(
                       "transition-colors",
-                      isActive ? "text-brand-400" : "text-white/50"
+                      isActive ? "text-brand-400" : "text-white/50",
                     )}
                   />
                   {isActive && (
                     <motion.div
                       layoutId="bottomNavIndicator"
                       className="absolute -bottom-1 w-1 h-1 rounded-full bg-brand-400"
-                      transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 380,
+                        damping: 30,
+                      }}
                     />
                   )}
                 </motion.div>

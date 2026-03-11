@@ -65,16 +65,16 @@ export function fromWei(wei: string | bigint, decimals = 6): string {
  */
 export function toWei(amount: string | number, decimals = 6): bigint {
   const amountStr = typeof amount === "number" ? amount.toString() : amount;
-  
+
   // Handle empty or invalid input
   if (!amountStr || amountStr === "" || isNaN(Number(amountStr))) {
     return BigInt(0);
   }
-  
+
   const [whole = "0", fraction = ""] = amountStr.split(".");
   const fractionPadded = fraction.padEnd(decimals, "0").slice(0, decimals);
   const combined = whole + fractionPadded;
-  
+
   // Remove leading zeros to avoid issues with BigInt
   const cleaned = combined.replace(/^0+/, "") || "0";
   return BigInt(cleaned);

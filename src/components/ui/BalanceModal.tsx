@@ -94,7 +94,7 @@ export function BalanceModal({
                             "w-full rounded-2xl p-4 border transition-all text-left relative overflow-hidden",
                             isSelected
                               ? "border-brand-400/50 bg-brand-500/10"
-                              : "border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10"
+                              : "border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10",
                           )}
                         >
                           <div className="flex items-center gap-3">
@@ -117,7 +117,11 @@ export function BalanceModal({
                                 animate={{ scale: 1 }}
                                 className="w-7 h-7 rounded-full bg-brand-400 flex items-center justify-center flex-shrink-0"
                               >
-                                <Check size={16} className="text-white" strokeWidth={3} />
+                                <Check
+                                  size={16}
+                                  className="text-white"
+                                  strokeWidth={3}
+                                />
                               </motion.div>
                             )}
                           </div>
@@ -148,7 +152,7 @@ export function BalanceModal({
                             "w-full rounded-2xl p-4 border transition-all text-left relative overflow-hidden",
                             isSelected
                               ? "border-brand-400/50 bg-brand-500/10"
-                              : "border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10"
+                              : "border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10",
                           )}
                         >
                           <div className="flex items-center gap-3">
@@ -171,7 +175,11 @@ export function BalanceModal({
                                 animate={{ scale: 1 }}
                                 className="w-7 h-7 rounded-full bg-brand-400 flex items-center justify-center flex-shrink-0"
                               >
-                                <Check size={16} className="text-white" strokeWidth={3} />
+                                <Check
+                                  size={16}
+                                  className="text-white"
+                                  strokeWidth={3}
+                                />
                               </motion.div>
                             )}
                           </div>

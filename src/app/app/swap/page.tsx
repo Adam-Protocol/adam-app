@@ -5,7 +5,14 @@ import { useMultiChainWallet } from "@/hooks/useMultiChainWallet";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { RefreshCw, ArrowLeftRight, Info, CheckCircle2, Sparkles, TrendingUp } from "lucide-react";
+import {
+  RefreshCw,
+  ArrowLeftRight,
+  Info,
+  CheckCircle2,
+  Sparkles,
+  TrendingUp,
+} from "lucide-react";
 import axios from "axios";
 import { hash } from "starknet";
 import { WalletGuard } from "@/components/auth/WalletGuard";
@@ -81,7 +88,7 @@ function SwapPageContent({
   // Calculate exchange rate between selected tokens
   const calculateRate = () => {
     if (!ratesData || tokenIn === tokenOut) return 0;
-    
+
     // All rates are USD-based, so we need to convert
     // Example: ADNGN to ADKES = (1/NGN_rate) * KES_rate
     if (tokenIn === "adusd") {
@@ -110,14 +117,14 @@ function SwapPageContent({
     mutationFn: async (data: SwapForm) => {
       setTxSuccess(false);
       const secret = BigInt(Math.floor(Math.random() * 1e15));
-      
+
       // Convert amount to wei (18 decimals for ADUSD/ADNGN) using toWei utility
       const amountWei = toWei(data.amount_in, 18);
       const commitment = hash.computePedersenHash(
         "0x" + amountWei.toString(16),
         "0x" + secret.toString(16),
       );
-      
+
       // Calculate minimum output with slippage protection using toWei
       const minOut = toWei((estimatedOut * 0.99).toString(), 18);
 
@@ -257,7 +264,7 @@ function SwapPageContent({
           {/* From */}
           <div className="gradient-border rounded-2xl p-5 space-y-3">
             <label className="block text-sm text-white/50">You Pay</label>
-            
+
             {/* Token selector */}
             <div className="grid grid-cols-5 gap-2 mb-3">
               {(["adusd", "adngn", "adkes", "adghs", "adzar"] as const).map(
@@ -322,7 +329,7 @@ function SwapPageContent({
             <label className="block text-sm text-white/50">
               You Receive (est.)
             </label>
-            
+
             {/* Token selector */}
             <div className="grid grid-cols-5 gap-2 mb-3">
               {(["adusd", "adngn", "adkes", "adghs", "adzar"] as const).map(

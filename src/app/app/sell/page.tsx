@@ -6,7 +6,13 @@ import { useAccount } from "@starknet-react/core";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { ArrowUpRight, Info, Sparkles, CheckCircle2, AlertCircle } from "lucide-react";
+import {
+  ArrowUpRight,
+  Info,
+  Sparkles,
+  CheckCircle2,
+  AlertCircle,
+} from "lucide-react";
 import axios from "axios";
 import { hash } from "starknet";
 import { WalletGuard } from "@/components/auth/WalletGuard";
@@ -123,7 +129,7 @@ function SellPageContent({
     if (!amount || !ratesData || parseFloat(amount) <= 0) return 0;
 
     const tokenCurrency = TOKEN_TO_CURRENCY[tokenType];
-    
+
     // If selling the same currency (e.g., ADNGN -> NGN), it's 1:1
     if (tokenCurrency === currency) {
       return parseFloat(amount);
@@ -144,7 +150,7 @@ function SellPageContent({
     // Cross-currency conversion (e.g., ADNGN -> KES)
     const fromRate = ratesData[tokenCurrency]?.rate || 0;
     const toRate = ratesData[currency]?.rate || 0;
-    
+
     if (fromRate > 0) {
       // Convert to USD first, then to target currency
       const usdAmount = parseFloat(amount) / fromRate;
@@ -320,33 +326,36 @@ function SellPageContent({
                 Token to Sell
               </label>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {(["adusd", "adngn", "adkes", "adghs", "adzar"] as const).map((t) => {
-                  const currencyCode = TOKEN_TO_CURRENCY[t];
-                  const currencyInfo = CURRENCY_INFO[currencyCode];
-                  return (
-                    <label
-                      key={t}
-                      className={`flex items-center gap-2 p-3 rounded-xl border cursor-pointer transition-all ${watch("token_in") === t ? "border-accent-orange bg-accent-orange/10" : "border-white/10 bg-white/3"}`}
-                    >
-                      <input
-                        type="radio"
-                        value={t}
-                        {...register("token_in", {
-                          onChange: (e: any) => {
-                            // Auto-update currency when token changes
-                            const newCurrency = TOKEN_TO_CURRENCY[e.target.value];
-                            setValue("currency", newCurrency as any);
-                          },
-                        })}
-                        className="sr-only"
-                      />
-                      <span className="text-lg">{currencyInfo.flag}</span>
-                      <p className="font-bold text-white text-xs uppercase">
-                        {t}
-                      </p>
-                    </label>
-                  );
-                })}
+                {(["adusd", "adngn", "adkes", "adghs", "adzar"] as const).map(
+                  (t) => {
+                    const currencyCode = TOKEN_TO_CURRENCY[t];
+                    const currencyInfo = CURRENCY_INFO[currencyCode];
+                    return (
+                      <label
+                        key={t}
+                        className={`flex items-center gap-2 p-3 rounded-xl border cursor-pointer transition-all ${watch("token_in") === t ? "border-accent-orange bg-accent-orange/10" : "border-white/10 bg-white/3"}`}
+                      >
+                        <input
+                          type="radio"
+                          value={t}
+                          {...register("token_in", {
+                            onChange: (e: any) => {
+                              // Auto-update currency when token changes
+                              const newCurrency =
+                                TOKEN_TO_CURRENCY[e.target.value];
+                              setValue("currency", newCurrency as any);
+                            },
+                          })}
+                          className="sr-only"
+                        />
+                        <span className="text-lg">{currencyInfo.flag}</span>
+                        <p className="font-bold text-white text-xs uppercase">
+                          {t}
+                        </p>
+                      </label>
+                    );
+                  },
+                )}
               </div>
             </div>
 
@@ -367,7 +376,7 @@ function SellPageContent({
                   {watch("token_in")}
                 </span>
               </div>
-              
+
               {/* Fiat Amount Display */}
               {amount && parseFloat(amount) > 0 && (
                 <motion.div
@@ -378,24 +387,34 @@ function SellPageContent({
                   {ratesLoading ? (
                     <div className="flex items-center justify-center gap-2">
                       <LoadingSpinner size="sm" />
-                      <span className="text-xs text-white/50">Calculating amount...</span>
+                      <span className="text-xs text-white/50">
+                        Calculating amount...
+                      </span>
                     </div>
                   ) : (
                     <div className="flex items-center justify-between">
-                      <span className="text-xs text-white/50">You will receive:</span>
+                      <span className="text-xs text-white/50">
+                        You will receive:
+                      </span>
                       <div className="flex items-center gap-2">
                         <span className="text-lg font-bold text-accent-green">
-                          {CURRENCY_INFO[currency]?.flag} {fiatAmount.toFixed(2)}
+                          {CURRENCY_INFO[currency]?.flag}{" "}
+                          {fiatAmount.toFixed(2)}
                         </span>
-                        <span className="text-sm font-semibold text-white/70">{currency}</span>
+                        <span className="text-sm font-semibold text-white/70">
+                          {currency}
+                        </span>
                       </div>
                     </div>
                   )}
-                  {!ratesLoading && TOKEN_TO_CURRENCY[tokenType] !== currency && (
-                    <div className="mt-1 text-[10px] text-white/30 text-right">
-                      Rate: 1 {tokenType.toUpperCase()} ≈ {(fiatAmount / parseFloat(amount)).toFixed(4)} {currency}
-                    </div>
-                  )}
+                  {!ratesLoading &&
+                    TOKEN_TO_CURRENCY[tokenType] !== currency && (
+                      <div className="mt-1 text-[10px] text-white/30 text-right">
+                        Rate: 1 {tokenType.toUpperCase()} ≈{" "}
+                        {(fiatAmount / parseFloat(amount)).toFixed(4)}{" "}
+                        {currency}
+                      </div>
+                    )}
                 </motion.div>
               )}
 
@@ -413,7 +432,8 @@ function SellPageContent({
               )}
               {!loadingCommitments && commitments.length > 0 && (
                 <div className="text-xs text-green-400 mt-1 flex items-center gap-1">
-                  <CheckCircle2 size={14} /> {commitments.length} commitment(s) available
+                  <CheckCircle2 size={14} /> {commitments.length} commitment(s)
+                  available
                 </div>
               )}
             </div>
@@ -439,7 +459,9 @@ function SellPageContent({
                       className="sr-only"
                     />
                     <span className="text-base">{info.flag}</span>
-                    <span className="text-xs font-medium text-white">{curr}</span>
+                    <span className="text-xs font-medium text-white">
+                      {curr}
+                    </span>
                   </label>
                 );
               })}
@@ -503,7 +525,8 @@ function SellPageContent({
               )}
               {verifiedAccountName && (
                 <div className="text-xs text-green-400 mt-1 flex items-center gap-1">
-                  <CheckCircle2 size={14} /> <span className="font-semibold">{verifiedAccountName}</span>
+                  <CheckCircle2 size={14} />{" "}
+                  <span className="font-semibold">{verifiedAccountName}</span>
                 </div>
               )}
             </div>

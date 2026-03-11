@@ -4,17 +4,17 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useMultiChainWallet } from "@/hooks/useMultiChainWallet";
 import { useQuery } from "@tanstack/react-query";
-import { 
-  Activity, 
-  ExternalLink, 
-  X, 
-  Filter, 
-  Clock, 
-  CheckCircle, 
+import {
+  Activity,
+  ExternalLink,
+  X,
+  Filter,
+  Clock,
+  CheckCircle,
   XCircle,
   ShoppingCart,
   TrendingUp,
-  RefreshCw
+  RefreshCw,
 } from "lucide-react";
 import axios from "axios";
 import { clsx } from "clsx";
@@ -29,15 +29,20 @@ const STATUS_CONFIG: Record<string, { color: string; bg: string }> = {
   processing: { color: "text-accent-cyan", bg: "bg-accent-cyan/15" },
 };
 
-const TYPE_CONFIG: Record<string, { icon: any; label: string; color: string }> = {
-  buy: { icon: ShoppingCart, label: "Buy", color: "text-brand-400" },
-  sell: { icon: TrendingUp, label: "Sell", color: "text-accent-orange" },
-  swap: { icon: RefreshCw, label: "Swap", color: "text-accent-cyan" },
-};
+const TYPE_CONFIG: Record<string, { icon: any; label: string; color: string }> =
+  {
+    buy: { icon: ShoppingCart, label: "Buy", color: "text-brand-400" },
+    sell: { icon: TrendingUp, label: "Sell", color: "text-accent-orange" },
+    swap: { icon: RefreshCw, label: "Swap", color: "text-accent-cyan" },
+  };
 
 function TxRowDesktop({ tx, onClick }: { tx: any; onClick: () => void }) {
   const status = STATUS_CONFIG[tx.status] ?? STATUS_CONFIG.pending;
-  const type = TYPE_CONFIG[tx.type] ?? { icon: Activity, label: tx.type, color: "text-white" };
+  const type = TYPE_CONFIG[tx.type] ?? {
+    icon: Activity,
+    label: tx.type,
+    color: "text-white",
+  };
   const TypeIcon = type.icon;
 
   return (
@@ -49,7 +54,9 @@ function TxRowDesktop({ tx, onClick }: { tx: any; onClick: () => void }) {
     >
       <td className="px-5 py-4">
         <div className="flex items-center gap-2">
-          <div className={`w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center ${type.color}`}>
+          <div
+            className={`w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center ${type.color}`}
+          >
             <TypeIcon size={16} />
           </div>
           <span className="font-medium text-white text-sm capitalize">
@@ -93,7 +100,11 @@ function TxRowDesktop({ tx, onClick }: { tx: any; onClick: () => void }) {
 
 function TxCardMobile({ tx, onClick }: { tx: any; onClick: () => void }) {
   const status = STATUS_CONFIG[tx.status] ?? STATUS_CONFIG.pending;
-  const type = TYPE_CONFIG[tx.type] ?? { icon: Activity, label: tx.type, color: "text-white" };
+  const type = TYPE_CONFIG[tx.type] ?? {
+    icon: Activity,
+    label: tx.type,
+    color: "text-white",
+  };
   const TypeIcon = type.icon;
 
   return (
@@ -105,7 +116,9 @@ function TxCardMobile({ tx, onClick }: { tx: any; onClick: () => void }) {
     >
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center ${type.color} shrink-0`}>
+          <div
+            className={`w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center ${type.color} shrink-0`}
+          >
             <TypeIcon size={18} />
           </div>
           <div>

@@ -67,7 +67,11 @@ export function useSwapToken() {
       const minAmountOutU256 = uint256.bnToUint256(minAmountOut);
 
       // Create contract instance
-      const swapContract = new Contract({ abi: SWAP_ABI, address: CONTRACTS.ADAM_SWAP, providerOrAccount: account });
+      const swapContract = new Contract({
+        abi: SWAP_ABI,
+        address: CONTRACTS.ADAM_SWAP,
+        providerOrAccount: account,
+      });
 
       // Execute swap transaction
       const result = await swapContract.swap(

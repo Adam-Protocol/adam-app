@@ -67,7 +67,11 @@ export function useBuyRate(
         console.log("Creating contract instance...");
         console.log("Swap address:", CONTRACTS.ADAM_SWAP);
 
-        const contract = new Contract({ abi: SWAP_ABI, address: CONTRACTS.ADAM_SWAP, providerOrAccount: provider });
+        const contract = new Contract({
+          abi: SWAP_ABI,
+          address: CONTRACTS.ADAM_SWAP,
+          providerOrAccount: provider,
+        });
 
         const tokenOutAddress =
           tokenOut === "adusd"
@@ -164,7 +168,7 @@ export function useBuyRate(
         setOutputAmount("0");
         return;
       }
-      
+
       // Use toWei to properly handle decimal conversion
       const amountInWei = toWei(amountIn, 6);
       console.log("Amount in wei:", amountInWei.toString());

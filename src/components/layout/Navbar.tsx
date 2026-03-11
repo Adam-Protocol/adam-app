@@ -4,16 +4,16 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Wallet, 
-  Menu, 
-  X, 
+import {
+  Wallet,
+  Menu,
+  X,
   ChevronDown,
   LayoutDashboard,
   ShoppingCart,
   TrendingUp,
   RefreshCw,
-  Activity
+  Activity,
 } from "lucide-react";
 import { clsx } from "clsx";
 import { useMultiChainWallet } from "@/hooks/useMultiChainWallet";
@@ -33,7 +33,8 @@ export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
-  const { shortAddress, isConnected, connectWallet, disconnect, address } = useMultiChainWallet();
+  const { shortAddress, isConnected, connectWallet, disconnect, address } =
+    useMultiChainWallet();
   const isLandingPage = pathname === "/";
 
   // Redirect to dashboard after connecting wallet on landing page
@@ -76,17 +77,19 @@ export function Navbar() {
   }, [isLandingPage]);
 
   return (
-    <header 
+    <header
       className={clsx(
         "fixed top-0 left-0 right-0 z-50 px-3 sm:px-6 py-3 transition-transform duration-300",
-        isLandingPage && isScrolled && "-translate-y-full"
+        isLandingPage && isScrolled && "-translate-y-full",
       )}
     >
-      <div className={clsx(
-        "border border-white/10 rounded-2xl shadow-xl",
-        "md:glass-strong",
-        "glass md:bg-[rgba(10,15,30,0.85)]"
-      )}>
+      <div
+        className={clsx(
+          "border border-white/10 rounded-2xl shadow-xl",
+          "md:glass-strong",
+          "glass md:bg-[rgba(10,15,30,0.85)]",
+        )}
+      >
         <div className="max-w-7xl mx-auto px-3 sm:px-6 flex h-12 sm:h-16 items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 group">
@@ -106,31 +109,32 @@ export function Navbar() {
 
           {/* Desktop Nav */}
           <nav className="hidden md:flex items-center gap-1">
-            {isConnected && NAV_LINKS.map((link) => {
-              const Icon = link.icon;
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={clsx(
-                    "px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2",
-                    pathname === link.href
-                      ? "bg-brand-500/15 text-brand-400 border border-brand-500/20"
-                      : "text-white/60 hover:text-white hover:bg-white/5",
-                  )}
-                >
-                  <Icon size={16} />
-                  {link.label}
-                </Link>
-              );
-            })}
+            {isConnected &&
+              NAV_LINKS.map((link) => {
+                const Icon = link.icon;
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={clsx(
+                      "px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2",
+                      pathname === link.href
+                        ? "bg-brand-500/15 text-brand-400 border border-brand-500/20"
+                        : "text-white/60 hover:text-white hover:bg-white/5",
+                    )}
+                  >
+                    <Icon size={16} />
+                    {link.label}
+                  </Link>
+                );
+              })}
           </nav>
 
           {/* Chain Selector & Wallet Button - Mobile & Desktop */}
           <div className="flex items-center gap-2 sm:gap-3">
             {/* Chain Selector - Always visible */}
             <ChainSelector />
-            
+
             {isConnected && shortAddress ? (
               <motion.button
                 whileHover={{ scale: 1.02 }}
@@ -140,7 +144,9 @@ export function Navbar() {
               >
                 <div className="pulse-dot" />
                 <span className="hidden sm:inline">{shortAddress}</span>
-                <span className="sm:hidden">{address?.slice(0, 6)}...{address?.slice(-4)}</span>
+                <span className="sm:hidden">
+                  {address?.slice(0, 6)}...{address?.slice(-4)}
+                </span>
                 <ChevronDown size={14} className="opacity-50" />
               </motion.button>
             ) : (

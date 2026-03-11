@@ -29,7 +29,9 @@ export function WalletDebug() {
         </div>
 
         <div className="pt-2 border-t border-white/10 mt-2">
-          <span className="text-white/50">useAccount.isConnected (Starknet):</span>{" "}
+          <span className="text-white/50">
+            useAccount.isConnected (Starknet):
+          </span>{" "}
           <span
             className={account.isConnected ? "text-green-400" : "text-red-400"}
           >
@@ -50,7 +52,9 @@ export function WalletDebug() {
         </div>
 
         <div className="pt-2 border-t border-white/10 mt-2">
-          <span className="text-white/50">useMultiChainWallet.isConnected:</span>{" "}
+          <span className="text-white/50">
+            useMultiChainWallet.isConnected:
+          </span>{" "}
           <span
             className={wallet.isConnected ? "text-green-400" : "text-red-400"}
           >
@@ -60,11 +64,15 @@ export function WalletDebug() {
 
         <div>
           <span className="text-white/50">useMultiChainWallet.address:</span>{" "}
-          <span className="text-blue-400 break-all">{wallet.address || "null"}</span>
+          <span className="text-blue-400 break-all">
+            {wallet.address || "null"}
+          </span>
         </div>
 
         <div>
-          <span className="text-white/50">useMultiChainWallet.shortAddress:</span>{" "}
+          <span className="text-white/50">
+            useMultiChainWallet.shortAddress:
+          </span>{" "}
           <span className="text-blue-400">{wallet.shortAddress || "null"}</span>
         </div>
       </div>

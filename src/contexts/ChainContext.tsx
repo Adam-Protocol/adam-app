@@ -1,6 +1,12 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useMemo } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useMemo,
+} from "react";
 import { useAccount, useConnect, useDisconnect } from "@starknet-react/core";
 import { useStarknetkitConnectModal, StarknetkitConnector } from "starknetkit";
 import { Connector } from "@starknet-react/core";
@@ -16,13 +22,17 @@ import { StacksAdapter } from "@/lib/chains/adapters/stacks";
 const ChainContext = createContext<ChainContextValue | undefined>(undefined);
 
 export function ChainProvider({ children }: { children: React.ReactNode }) {
-  const [currentChain, setCurrentChain] = useState<ChainType>(ChainType.STARKNET);
-  const [stacksAdapter, setStacksAdapter] = useState<StacksAdapter | null>(null);
+  const [currentChain, setCurrentChain] = useState<ChainType>(
+    ChainType.STARKNET,
+  );
+  const [stacksAdapter, setStacksAdapter] = useState<StacksAdapter | null>(
+    null,
+  );
 
   // Starknet hooks
   const starknetAccount = useAccount();
   const { connect: starknetConnect, connectors } = useConnect();
-  const { disconnect: starknetDisconnect } = useDisconnect();
+  const { disconnectAsync: starknetDisconnect } = useDisconnect();
   const { starknetkitConnectModal } = useStarknetkitConnectModal({
     connectors: connectors as StarknetkitConnector[],
   });
@@ -43,15 +53,17 @@ export function ChainProvider({ children }: { children: React.ReactNode }) {
       return connector;
     };
 
-    return new StarknetAdapter(
-      connectFn,
-      starknetDisconnect,
-      starknetAccount,
-    );
-  }, [starknetkitConnectModal, starknetConnect, starknetDisconnect, starknetAccount]);
+    return new StarknetAdapter(connectFn, starknetDisconnect, starknetAccount);
+  }, [
+    starknetkitConnectModal,
+    starknetConnect,
+    starknetDisconnect,
+    starknetAccount,
+  ]);
 
   // Get current adapter based on selected chain
-  const adapter = currentChain === ChainType.STARKNET ? starknetAdapter : stacksAdapter;
+  const adapter =
+    currentChain === ChainType.STARKNET ? starknetAdapter : stacksAdapter;
 
   // Get current account
   const account = adapter?.getAccount() || null;
@@ -95,7 +107,9 @@ export function ChainProvider({ children }: { children: React.ReactNode }) {
     disconnect,
   };
 
-  return <ChainContext.Provider value={value}>{children}</ChainContext.Provider>;
+  return (
+    <ChainContext.Provider value={value}>{children}</ChainContext.Provider>
+  );
 }
 
 export function useChain() {

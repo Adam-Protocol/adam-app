@@ -53,7 +53,11 @@ export function useBuyToken() {
       const amountU256 = uint256.bnToUint256(amountIn);
 
       // Create contract instance
-      const swapContract = new Contract({ abi: SWAP_ABI, address: CONTRACTS.ADAM_SWAP, providerOrAccount: account });
+      const swapContract = new Contract({
+        abi: SWAP_ABI,
+        address: CONTRACTS.ADAM_SWAP,
+        providerOrAccount: account,
+      });
 
       // Execute buy transaction
       const result = await swapContract.buy(

@@ -1,7 +1,10 @@
 import { useState } from "react";
 import { useChain } from "@/contexts/ChainContext";
 import { uint256 } from "starknet";
-import { SWAP_CONTRACT_ADDRESSES, MULTI_CHAIN_TOKENS } from "@/lib/chains/config";
+import {
+  SWAP_CONTRACT_ADDRESSES,
+  MULTI_CHAIN_TOKENS,
+} from "@/lib/chains/config";
 import { ChainType } from "@/lib/chains/types";
 
 // Starknet ABI for buy function
@@ -46,13 +49,23 @@ export function useMultiChainBuy() {
     setIsExecuting(true);
     try {
       const swapContractAddress = SWAP_CONTRACT_ADDRESSES[currentChain];
-      
+
       if (currentChain === ChainType.STARKNET) {
-        return await executeStarknetBuy(amountIn, tokenOut, commitment, swapContractAddress);
+        return await executeStarknetBuy(
+          amountIn,
+          tokenOut,
+          commitment,
+          swapContractAddress,
+        );
       } else if (currentChain === ChainType.STACKS) {
-        return await executeStacksBuy(amountIn, tokenOut, commitment, swapContractAddress);
+        return await executeStacksBuy(
+          amountIn,
+          tokenOut,
+          commitment,
+          swapContractAddress,
+        );
       }
-      
+
       throw new Error(`Unsupported chain: ${currentChain}`);
     } finally {
       setIsExecuting(false);
@@ -67,9 +80,10 @@ export function useMultiChainBuy() {
   ): Promise<string> => {
     if (!adapter) throw new Error("Adapter not available");
 
-    const tokenOutAddress = MULTI_CHAIN_TOKENS[tokenOut.toUpperCase()].addresses[ChainType.STARKNET];
+    const tokenOutAddress =
+      MULTI_CHAIN_TOKENS[tokenOut.toUpperCase()].addresses[ChainType.STARKNET];
     const usdcAddress = MULTI_CHAIN_TOKENS.USDC.addresses[ChainType.STARKNET];
-    
+
     if (!tokenOutAddress || !usdcAddress) {
       throw new Error("Token address not configured for Starknet");
     }
@@ -94,9 +108,10 @@ export function useMultiChainBuy() {
   ): Promise<string> => {
     if (!adapter) throw new Error("Adapter not available");
 
-    const tokenOutAddress = MULTI_CHAIN_TOKENS[tokenOut.toUpperCase()].addresses[ChainType.STACKS];
+    const tokenOutAddress =
+      MULTI_CHAIN_TOKENS[tokenOut.toUpperCase()].addresses[ChainType.STACKS];
     const usdcAddress = MULTI_CHAIN_TOKENS.USDC.addresses[ChainType.STACKS];
-    
+
     if (!tokenOutAddress || !usdcAddress) {
       throw new Error("Token address not configured for Stacks");
     }
@@ -105,12 +120,7 @@ export function useMultiChainBuy() {
     const result = await adapter.executeTransaction({
       contractAddress: swapContractAddress,
       functionName: "buy",
-      args: [
-        usdcAddress,
-        amountIn.toString(),
-        tokenOutAddress,
-        commitment,
-      ],
+      args: [usdcAddress, amountIn.toString(), tokenOutAddress, commitment],
     });
 
     return result.hash;

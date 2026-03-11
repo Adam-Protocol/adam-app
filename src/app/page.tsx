@@ -4,19 +4,19 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { 
-  ArrowRight, 
-  Shield, 
-  Zap, 
-  Globe, 
-  Lock, 
-  TrendingUp, 
+import {
+  ArrowRight,
+  Shield,
+  Zap,
+  Globe,
+  Lock,
+  TrendingUp,
   Network,
   Sparkles,
   CheckCircle2,
   Github,
   Twitter,
-  FileText
+  FileText,
 } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { AnimatedBackground } from "@/components/ui/AnimatedBackground";
@@ -218,16 +218,25 @@ export default function LandingPage() {
               onClick={(e) => handleCTAClick(e, "/app/buy")}
               className="btn-neon group flex items-center justify-center gap-2 px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl bg-gradient-to-r from-brand-500 to-accent-cyan text-white font-bold text-base sm:text-lg shadow-xl shadow-brand-500/30 hover:shadow-brand-500/50 hover:scale-105 active:scale-98 transition-all duration-200 cursor-pointer"
             >
-              <Sparkles size={18} className="group-hover:rotate-12 transition-transform" />
-              Get Started 
-              <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+              <Sparkles
+                size={18}
+                className="group-hover:rotate-12 transition-transform"
+              />
+              Get Started
+              <ArrowRight
+                size={18}
+                className="group-hover:translate-x-1 transition-transform"
+              />
             </button>
             <button
               onClick={(e) => handleCTAClick(e, "/app")}
               className="glass group flex items-center justify-center gap-2 px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl border border-white/10 text-white/70 font-semibold text-base sm:text-lg hover:text-white hover:border-white/20 hover:bg-white/5 active:scale-98 transition-all duration-200 cursor-pointer"
             >
               View Dashboard
-              <ArrowRight size={18} className="opacity-0 -ml-4 group-hover:opacity-100 group-hover:ml-0 transition-all" />
+              <ArrowRight
+                size={18}
+                className="opacity-0 -ml-4 group-hover:opacity-100 group-hover:ml-0 transition-all"
+              />
             </button>
           </motion.div>
 
@@ -370,7 +379,10 @@ export default function LandingPage() {
                 <div className="flex-1 pt-1 sm:pt-2">
                   <h3 className="font-bold text-white text-base sm:text-lg mb-2 group-hover:text-brand-400 transition-colors flex items-center gap-2">
                     {item.title}
-                    <CheckCircle2 size={16} className="text-accent-green opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <CheckCircle2
+                      size={16}
+                      className="text-accent-green opacity-0 group-hover:opacity-100 transition-opacity"
+                    />
                   </h3>
                   <p className="text-sm text-white/50 leading-relaxed">
                     {item.desc}
@@ -390,8 +402,11 @@ export default function LandingPage() {
               onClick={(e) => handleCTAClick(e, "/app")}
               className="inline-flex items-center gap-2 btn-neon px-6 sm:px-8 py-3 sm:py-3.5 rounded-xl bg-gradient-to-r from-brand-500 to-accent-cyan text-white font-semibold text-sm sm:text-base shadow-lg shadow-brand-500/30 hover:shadow-brand-500/50 hover:scale-105 active:scale-98 transition-all group cursor-pointer"
             >
-              Try It Now 
-              <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+              Try It Now
+              <ArrowRight
+                size={16}
+                className="group-hover:translate-x-1 transition-transform"
+              />
             </button>
           </motion.div>
         </div>
@@ -412,10 +427,13 @@ export default function LandingPage() {
                     className="object-cover"
                   />
                 </div>
-                <span className="font-bold text-white text-lg">Adam Protocol</span>
+                <span className="font-bold text-white text-lg">
+                  Adam Protocol
+                </span>
               </div>
               <p className="text-white/40 text-sm leading-relaxed">
-                Privacy-first stablecoin protocol on Starknet. Built for African scale.
+                Privacy-first stablecoin protocol on Starknet. Built for African
+                scale.
               </p>
             </div>
 
@@ -424,23 +442,38 @@ export default function LandingPage() {
               <h4 className="font-semibold text-white mb-3 text-sm">Product</h4>
               <ul className="space-y-2 text-sm">
                 <li>
-                  <Link href="/app/buy" className="text-white/50 hover:text-brand-400 transition-colors flex items-center gap-1">
-                    <ArrowRight size={12} className="opacity-0 group-hover:opacity-100" />
+                  <Link
+                    href="/app/buy"
+                    className="text-white/50 hover:text-brand-400 transition-colors flex items-center gap-1"
+                  >
+                    <ArrowRight
+                      size={12}
+                      className="opacity-0 group-hover:opacity-100"
+                    />
                     Buy Tokens
                   </Link>
                 </li>
                 <li>
-                  <Link href="/app/sell" className="text-white/50 hover:text-brand-400 transition-colors">
+                  <Link
+                    href="/app/sell"
+                    className="text-white/50 hover:text-brand-400 transition-colors"
+                  >
                     Sell Tokens
                   </Link>
                 </li>
                 <li>
-                  <Link href="/app/swap" className="text-white/50 hover:text-brand-400 transition-colors">
+                  <Link
+                    href="/app/swap"
+                    className="text-white/50 hover:text-brand-400 transition-colors"
+                  >
                     Swap
                   </Link>
                 </li>
                 <li>
-                  <Link href="/app/activity" className="text-white/50 hover:text-brand-400 transition-colors">
+                  <Link
+                    href="/app/activity"
+                    className="text-white/50 hover:text-brand-400 transition-colors"
+                  >
                     Activity
                   </Link>
                 </li>
@@ -449,22 +482,33 @@ export default function LandingPage() {
 
             {/* Resources */}
             <div>
-              <h4 className="font-semibold text-white mb-3 text-sm">Resources</h4>
+              <h4 className="font-semibold text-white mb-3 text-sm">
+                Resources
+              </h4>
               <ul className="space-y-2 text-sm">
                 <li>
-                  <a href="#" className="text-white/50 hover:text-brand-400 transition-colors inline-flex items-center gap-1">
+                  <a
+                    href="#"
+                    className="text-white/50 hover:text-brand-400 transition-colors inline-flex items-center gap-1"
+                  >
                     <FileText size={14} />
                     Documentation
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="text-white/50 hover:text-brand-400 transition-colors inline-flex items-center gap-1">
+                  <a
+                    href="#"
+                    className="text-white/50 hover:text-brand-400 transition-colors inline-flex items-center gap-1"
+                  >
                     <Github size={14} />
                     GitHub
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="text-white/50 hover:text-brand-400 transition-colors inline-flex items-center gap-1">
+                  <a
+                    href="#"
+                    className="text-white/50 hover:text-brand-400 transition-colors inline-flex items-center gap-1"
+                  >
                     <Twitter size={14} />
                     Twitter
                   </a>
@@ -477,12 +521,18 @@ export default function LandingPage() {
               <h4 className="font-semibold text-white mb-3 text-sm">Legal</h4>
               <ul className="space-y-2 text-sm">
                 <li>
-                  <a href="#" className="text-white/50 hover:text-brand-400 transition-colors">
+                  <a
+                    href="#"
+                    className="text-white/50 hover:text-brand-400 transition-colors"
+                  >
                     Privacy Policy
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="text-white/50 hover:text-brand-400 transition-colors">
+                  <a
+                    href="#"
+                    className="text-white/50 hover:text-brand-400 transition-colors"
+                  >
                     Terms of Service
                   </a>
                 </li>
@@ -493,7 +543,8 @@ export default function LandingPage() {
           {/* Bottom */}
           <div className="pt-6 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-white/30">
             <p>
-              © 2026 Adam Protocol. Built on Starknet · Privacy Track · Starknet Re{"{"}define{"}"} 2026
+              © 2026 Adam Protocol. Built on Starknet · Privacy Track · Starknet
+              Re{"{"}define{"}"} 2026
             </p>
             <div className="flex items-center gap-4">
               <a href="#" className="hover:text-brand-400 transition-colors">

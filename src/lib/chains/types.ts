@@ -38,7 +38,11 @@ export interface ChainAdapter {
   isConnected(): boolean;
   executeTransaction(params: TransactionParams): Promise<TransactionResult>;
   getBalance(address: string, tokenAddress?: string): Promise<bigint>;
-  approveToken(tokenAddress: string, spenderAddress: string, amount: bigint): Promise<TransactionResult>;
+  approveToken(
+    tokenAddress: string,
+    spenderAddress: string,
+    amount: bigint,
+  ): Promise<TransactionResult>;
 }
 
 export interface TransactionParams {

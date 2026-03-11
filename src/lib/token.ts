@@ -44,7 +44,11 @@ export async function checkTokenAllowance(
   account: AccountInterface,
 ): Promise<bigint> {
   try {
-    const tokenContract = new Contract({ abi: ERC20_ABI, address: tokenAddress, providerOrAccount: account });
+    const tokenContract = new Contract({
+      abi: ERC20_ABI,
+      address: tokenAddress,
+      providerOrAccount: account,
+    });
 
     // Call allowance with 'latest' block for v0.10 compatibility
     const result: any = await tokenContract.call(
