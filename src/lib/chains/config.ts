@@ -36,7 +36,7 @@ export const MULTI_CHAIN_TOKENS: Record<string, TokenInfo> = {
     decimals: 6,
     addresses: {
       [ChainType.STARKNET]: process.env.NEXT_PUBLIC_USDC_ADDRESS || "",
-      [ChainType.STACKS]: process.env.NEXT_PUBLIC_STACKS_USDC_ADDRESS || "",
+      [ChainType.STACKS]: process.env.NEXT_PUBLIC_STACKS_USDCx_ADDRESS || "",
     },
   },
   ADUSD: {

@@ -30,6 +30,22 @@ export interface TransactionResult {
   chainType: ChainType;
 }
 
+/**
+ * Chain-agnostic description of what the user intends to do.
+ * Each adapter translates this into chain-specific transaction params.
+ */
+export interface TransactionIntent {
+  action: "buy" | "sell" | "swap";
+  /** Canonical token symbol, e.g. 'USDC' */
+  tokenIn: string;
+  amountIn: bigint;
+  /** Canonical token symbol, e.g. 'ADNGN' */
+  tokenOut: string;
+  commitment?: string;
+  nullifier?: string;
+  minAmountOut?: bigint;
+}
+
 export interface ChainAdapter {
   chainType: ChainType;
   connect(): Promise<WalletAccount | null>;
@@ -43,6 +59,19 @@ export interface ChainAdapter {
     spenderAddress: string,
     amount: bigint,
   ): Promise<TransactionResult>;
+  /**
+   * Convert a chain-agnostic TransactionIntent into chain-specific
+   * TransactionParams. All encoding differences live here.
+   */
+  buildTransactionArgs(
+    intent: TransactionIntent,
+    contractAddress: string,
+  ): TransactionParams;
+  /**
+   * Whether this chain requires an explicit token approval step
+   * before executing a transaction (e.g. ERC20 approve on Starknet).
+   */
+  requiresApproval(intent: TransactionIntent): boolean;
 }
 
 export interface TransactionParams {
@@ -70,4 +99,6 @@ export interface ChainContextValue {
   isConnected: boolean;
   connect: () => Promise<WalletAccount | null>;
   disconnect: () => Promise<void>;
+  /** Execute a chain-agnostic intent: handles approval + signing + backend notification */
+  executeIntent: (intent: TransactionIntent) => Promise<TransactionResult>;
 }
