@@ -11,6 +11,17 @@ import { MULTI_CHAIN_TOKENS } from "../config";
 export class StacksAdapter implements ChainAdapter {
   chainType = ChainType.STACKS;
   private currentAccount: WalletAccount | null = null;
+  private onAccountChangeCallback: ((account: WalletAccount | null) => void) | null = null;
+
+  setAccountChangeListener(callback: (account: WalletAccount | null) => void) {
+    this.onAccountChangeCallback = callback;
+  }
+
+  private notifyAccountChange() {
+    if (this.onAccountChangeCallback) {
+      this.onAccountChangeCallback(this.currentAccount);
+    }
+  }
 
   async connect(): Promise<WalletAccount | null> {
     if (typeof window === "undefined") {
@@ -21,7 +32,6 @@ export class StacksAdapter implements ChainAdapter {
       const { request } = await import("@stacks/connect");
 
       // Use stx_getAddresses to trigger wallet connection
-      // This will show the wallet selection popup
       const addressResponse = await request("stx_getAddresses", {});
 
       if (addressResponse?.addresses?.[0]?.address) {
@@ -31,6 +41,7 @@ export class StacksAdapter implements ChainAdapter {
           chainType: ChainType.STACKS,
         };
 
+        this.notifyAccountChange();
         return this.currentAccount;
       }
 
@@ -49,7 +60,13 @@ export class StacksAdapter implements ChainAdapter {
     try {
       const { disconnect } = await import("@stacks/connect");
       disconnect();
+      
+      // Manually clear localStorage as well, as disconnect() can be inconsistent
+      localStorage.removeItem("blockstack-session");
+      localStorage.removeItem("stacks-wallet-config");
+      
       this.currentAccount = null;
+      this.notifyAccountChange();
     } catch (error) {
       console.error("Stacks disconnect failed:", error);
     }
@@ -59,25 +76,23 @@ export class StacksAdapter implements ChainAdapter {
     // Check if user is already connected via localStorage
     if (!this.currentAccount && typeof window !== "undefined") {
       try {
-        const getLocalStorage = async () => {
+        const loadAccount = async () => {
           const { getLocalStorage } = await import("@stacks/connect");
-          return getLocalStorage();
+          const userData = getLocalStorage();
+          
+          if (userData?.addresses?.stx?.[0]?.address) {
+            this.currentAccount = {
+              address: userData.addresses.stx[0].address,
+              publicKey: "", // Not available from storage
+              chainType: ChainType.STACKS,
+            };
+            this.notifyAccountChange();
+          }
         };
 
-        getLocalStorage()
-          .then((userData) => {
-            if (userData?.addresses?.stx?.[0]?.address) {
-              // Note: publicKey is not available in localStorage (stripped for security)
-              this.currentAccount = {
-                address: userData.addresses.stx[0].address,
-                publicKey: "", // Not available from storage
-                chainType: ChainType.STACKS,
-              };
-            }
-          })
-          .catch((error) => {
-            console.error("Failed to get Stacks account from storage:", error);
-          });
+        loadAccount().catch(error => {
+          console.error("Failed to get Stacks account from storage:", error);
+        });
       } catch (error) {
         console.error("Failed to get Stacks account from storage:", error);
       }
