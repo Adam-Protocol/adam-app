@@ -15,9 +15,12 @@ import {
   ChainAdapter,
   WalletAccount,
   ChainContextValue,
+  TransactionIntent,
+  TransactionResult,
 } from "@/lib/chains/types";
 import { StarknetAdapter } from "@/lib/chains/adapters/starknet";
 import { StacksAdapter } from "@/lib/chains/adapters/stacks";
+import { SWAP_CONTRACT_ADDRESSES } from "@/lib/chains/config";
 
 const ChainContext = createContext<ChainContextValue | undefined>(undefined);
 
@@ -61,24 +64,59 @@ export function ChainProvider({ children }: { children: React.ReactNode }) {
     starknetAccount,
   ]);
 
-  // Get current adapter based on selected chain
-  const adapter =
-    currentChain === ChainType.STARKNET ? starknetAdapter : stacksAdapter;
+  /**
+   * Registry map — adding a new chain is a one-line addition here.
+   * No if/else chain checks anywhere in the business layer.
+   */
+  const adapterRegistry = useMemo<Partial<Record<ChainType, ChainAdapter>>>(
+    () => ({
+      [ChainType.STARKNET]: starknetAdapter,
+      [ChainType.STACKS]: stacksAdapter ?? undefined,
+    }),
+    [starknetAdapter, stacksAdapter],
+  );
 
-  // Get current account
-  const account = adapter?.getAccount() || null;
-  const isConnected = adapter?.isConnected() || false;
+  const adapter = adapterRegistry[currentChain] ?? null;
+  const account = adapter?.getAccount() ?? null;
+  const isConnected = adapter?.isConnected() ?? false;
 
-  // Connect function
   const connect = async (): Promise<WalletAccount | null> => {
     if (!adapter) return null;
     return adapter.connect();
   };
 
-  // Disconnect function
   const disconnect = async (): Promise<void> => {
     if (!adapter) return;
     await adapter.disconnect();
+  };
+
+  /**
+   * Chain-agnostic transaction executor.
+   * Handles the full flow: approval (if needed) → signing → result.
+   * Components call this with a TransactionIntent and never touch chain logic.
+   */
+  const executeIntent = async (
+    intent: TransactionIntent,
+  ): Promise<TransactionResult> => {
+    if (!adapter || !account) {
+      throw new Error("Wallet not connected");
+    }
+
+    const contractAddress = SWAP_CONTRACT_ADDRESSES[currentChain];
+
+    // Step 1: Approve token spend if the chain requires it (e.g. Starknet ERC-20)
+    if (adapter.requiresApproval(intent)) {
+      const tokenInAddress =
+        (await import("@/lib/chains/config")).MULTI_CHAIN_TOKENS[
+          intent.tokenIn.toUpperCase()
+        ]?.addresses[currentChain] ?? "";
+
+      await adapter.approveToken(tokenInAddress, contractAddress, intent.amountIn);
+    }
+
+    // Step 2: Build chain-specific params and execute
+    const params = adapter.buildTransactionArgs(intent, contractAddress);
+    return adapter.executeTransaction(params);
   };
 
   // Persist chain selection
@@ -105,6 +143,7 @@ export function ChainProvider({ children }: { children: React.ReactNode }) {
     isConnected,
     connect,
     disconnect,
+    executeIntent,
   };
 
   return (
