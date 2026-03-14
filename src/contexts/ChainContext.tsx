@@ -28,9 +28,12 @@ export function ChainProvider({ children }: { children: React.ReactNode }) {
   const [currentChain, setCurrentChain] = useState<ChainType>(
     ChainType.STARKNET,
   );
+  // Stacks adapter state
   const [stacksAdapter, setStacksAdapter] = useState<StacksAdapter | null>(
     null,
   );
+  // State to track Stacks account and trigger re-renders for Stacks
+  const [stacksAccount, setStacksAccount] = useState<WalletAccount | null>(null);
 
   // Starknet hooks
   const starknetAccount = useAccount();
@@ -43,7 +46,17 @@ export function ChainProvider({ children }: { children: React.ReactNode }) {
   // Initialize Stacks adapter
   useEffect(() => {
     if (typeof window !== "undefined") {
-      setStacksAdapter(new StacksAdapter());
+      const adapter = new StacksAdapter();
+      
+      // Subscribe to account changes to trigger re-renders
+      adapter.setAccountChangeListener((account) => {
+        setStacksAccount(account);
+      });
+
+      // Eagerly try to load account from storage
+      adapter.getAccount();
+      
+      setStacksAdapter(adapter);
     }
   }, []);
 
