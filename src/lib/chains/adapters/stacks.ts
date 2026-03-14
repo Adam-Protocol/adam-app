@@ -4,7 +4,9 @@ import {
   WalletAccount,
   TransactionParams,
   TransactionResult,
+  TransactionIntent,
 } from "../types";
+import { MULTI_CHAIN_TOKENS } from "../config";
 
 export class StacksAdapter implements ChainAdapter {
   chainType = ChainType.STACKS;
@@ -23,23 +25,9 @@ export class StacksAdapter implements ChainAdapter {
       const addressResponse = await request("stx_getAddresses", {});
 
       if (addressResponse?.addresses?.[0]?.address) {
-        // Now get full account details
-        const accountResponse = await request("stx_getAccounts", {});
-
-        if (accountResponse?.accounts?.[0]) {
-          this.currentAccount = {
-            address: accountResponse.accounts[0].address,
-            publicKey: accountResponse.accounts[0].publicKey,
-            chainType: ChainType.STACKS,
-          };
-
-          return this.currentAccount;
-        }
-
-        // Fallback to address-only if accounts not available
         this.currentAccount = {
           address: addressResponse.addresses[0].address,
-          publicKey: "", // Not available from addresses endpoint
+          publicKey: addressResponse.addresses[0].publicKey ?? "",
           chainType: ChainType.STACKS,
         };
 
@@ -201,7 +189,8 @@ export class StacksAdapter implements ChainAdapter {
     spenderAddress: string,
     amount: bigint,
   ): Promise<TransactionResult> {
-    // Stacks uses a different approval mechanism (SIP-010)
+    // Stacks SIP-010 has no allowance model — this is a no-op.
+    // The method exists only to satisfy ChainAdapter; requiresApproval() returns false.
     return this.executeTransaction({
       contractAddress: tokenAddress,
       functionName: "transfer",
@@ -212,5 +201,54 @@ export class StacksAdapter implements ChainAdapter {
         null,
       ],
     });
+  }
+
+  /**
+   * All Stacks-specific encoding lives here:
+   * - amounts are plain strings (Clarity uint)
+   * - canonical token symbols → Stacks contract addresses (e.g. "ST1X.adam-token")
+   * - no ABI needed — Stacks uses dynamic dispatch
+   */
+  buildTransactionArgs(
+    intent: TransactionIntent,
+    contractAddress: string,
+  ): TransactionParams {
+    const tokenIn =
+      MULTI_CHAIN_TOKENS[intent.tokenIn.toUpperCase()]?.addresses[
+        ChainType.STACKS
+      ] ?? "";
+    const tokenOut =
+      MULTI_CHAIN_TOKENS[intent.tokenOut.toUpperCase()]?.addresses[
+        ChainType.STACKS
+      ] ?? "";
+    // Clarity uint — plain string representation
+    const amountStr = intent.amountIn.toString();
+
+    if (intent.action === "buy") {
+      return {
+        contractAddress,
+        functionName: "buy",
+        args: [tokenIn, amountStr, tokenOut, intent.commitment ?? ""],
+      };
+    }
+
+    if (intent.action === "swap") {
+      const minAmountStr = (intent.minAmountOut ?? 0n).toString();
+      return {
+        contractAddress,
+        functionName: "swap",
+        args: [tokenIn, amountStr, tokenOut, minAmountStr, intent.commitment ?? ""],
+      };
+    }
+
+    throw new Error(`Unsupported action '${intent.action}' on Stacks adapter`);
+  }
+
+  /**
+   * Stacks SIP-010 tokens do NOT require a separate approve step —
+   * the contract call itself handles transfers atomically.
+   */
+  requiresApproval(_intent: TransactionIntent): boolean {
+    return false;
   }
 }

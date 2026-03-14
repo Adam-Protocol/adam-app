@@ -5,7 +5,9 @@ import {
   WalletAccount,
   TransactionParams,
   TransactionResult,
+  TransactionIntent,
 } from "../types";
+import { MULTI_CHAIN_TOKENS } from "../config";
 
 export class StarknetAdapter implements ChainAdapter {
   chainType = ChainType.STARKNET;
@@ -153,5 +155,82 @@ export class StarknetAdapter implements ChainAdapter {
       hash: result.transaction_hash,
       chainType: ChainType.STARKNET,
     };
+  }
+
+  /**
+   * All Starknet-specific encoding lives here:
+   * - amounts → uint256 struct
+   * - canonical token symbols → Starknet contract addresses
+   * - ABI embedded per function
+   */
+  buildTransactionArgs(
+    intent: TransactionIntent,
+    contractAddress: string,
+  ): TransactionParams {
+    const tokenIn =
+      MULTI_CHAIN_TOKENS[intent.tokenIn.toUpperCase()]?.addresses[
+        ChainType.STARKNET
+      ] ?? "";
+    const tokenOut =
+      MULTI_CHAIN_TOKENS[intent.tokenOut.toUpperCase()]?.addresses[
+        ChainType.STARKNET
+      ] ?? "";
+    const amountU256 = uint256.bnToUint256(intent.amountIn);
+
+    if (intent.action === "buy") {
+      return {
+        contractAddress,
+        functionName: "buy",
+        args: [tokenIn, amountU256, tokenOut, intent.commitment ?? "0x0"],
+        abi: [
+          {
+            name: "buy",
+            type: "function",
+            inputs: [
+              { name: "token_in", type: "core::starknet::contract_address::ContractAddress" },
+              { name: "amount_in", type: "core::integer::u256" },
+              { name: "token_out", type: "core::starknet::contract_address::ContractAddress" },
+              { name: "commitment", type: "core::felt252" },
+            ],
+            outputs: [],
+            state_mutability: "external",
+          },
+        ],
+      };
+    }
+
+    if (intent.action === "swap") {
+      const minAmountU256 = uint256.bnToUint256(intent.minAmountOut ?? 0n);
+      return {
+        contractAddress,
+        functionName: "swap",
+        args: [tokenIn, amountU256, tokenOut, minAmountU256, intent.commitment ?? "0x0"],
+        abi: [
+          {
+            name: "swap",
+            type: "function",
+            inputs: [
+              { name: "token_in", type: "core::starknet::contract_address::ContractAddress" },
+              { name: "amount_in", type: "core::integer::u256" },
+              { name: "token_out", type: "core::starknet::contract_address::ContractAddress" },
+              { name: "min_amount_out", type: "core::integer::u256" },
+              { name: "commitment", type: "core::felt252" },
+            ],
+            outputs: [],
+            state_mutability: "external",
+          },
+        ],
+      };
+    }
+
+    throw new Error(`Unsupported action '${intent.action}' on Starknet adapter`);
+  }
+
+  /**
+   * Starknet ERC-20 tokens require an explicit approve() before
+   * the swap contract can pull funds.
+   */
+  requiresApproval(intent: TransactionIntent): boolean {
+    return intent.action === "buy" || intent.action === "swap";
   }
 }
