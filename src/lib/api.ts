@@ -1,4 +1,5 @@
 import axios, { AxiosInstance } from "axios";
+import { ChainType } from "@/lib/chains/types";
 
 // Create axios instance with base configuration
 const createApiClient = (): AxiosInstance => {
@@ -51,6 +52,8 @@ export const api = {
       amount_in: string;
       token_out: "adusd" | "adngn" | "adkes" | "adghs" | "adzar";
       commitment: string;
+      tx_hash?: string;
+      chain?: "STARKNET" | "STACKS";
       transactionId?: string;
     }) => apiClient.post("/token/buy", data),
 
@@ -63,12 +66,14 @@ export const api = {
       currency: "NGN" | "USD";
       bank_account: string;
       bank_code: string;
+      chain?: "STARKNET" | "STACKS";
       transactionId?: string;
     }) => apiClient.post("/token/sell", data),
 
-    getBalances: (wallet: string) =>
+    getBalances: (wallet: string, chain: ChainType = ChainType.STARKNET) =>
       apiClient.get<{
         wallet: string;
+        chain: string;
         balances: {
           adusd: { raw: string; formatted: string; decimals: number };
           adngn: { raw: string; formatted: string; decimals: number };
@@ -77,7 +82,9 @@ export const api = {
           adzar: { raw: string; formatted: string; decimals: number };
           usdc: { raw: string; formatted: string; decimals: number };
         };
-      }>(`/token/balances/${wallet}`),
+      }>(`/token/balances/${wallet}`, {
+        params: { chain: chain.toUpperCase() },
+      }),
   },
 
   // Swap endpoints
@@ -89,6 +96,7 @@ export const api = {
       token_out: "adusd" | "adngn" | "adkes" | "adghs" | "adzar";
       min_amount_out: string;
       commitment: string;
+      chain?: "STARKNET" | "STACKS";
       transactionId?: string;
     }) => apiClient.post("/swap", data),
 
