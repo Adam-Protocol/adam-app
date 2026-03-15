@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useMultiChainWallet } from "@/hooks/useMultiChainWallet";
 import { useQuery } from "@tanstack/react-query";
@@ -145,8 +145,20 @@ function DashboardPageContent({
   currentChain: any;
 }) {
   const [isBalanceModalOpen, setIsBalanceModalOpen] = useState(false);
-  const [selectedBalance, setSelectedBalance] = useState("usdc");
+  const [selectedBalance, setSelectedBalance] = useState(
+    currentChain === "stacks" ? "stx" : "usdc"
+  );
   const [isBalanceHidden, setIsBalanceHidden] = useState(false);
+
+  // Debug logging
+  useEffect(() => {
+    console.log("Dashboard Debug:", {
+      address,
+      isConnected,
+      currentChain,
+      chainType: typeof currentChain,
+    });
+  }, [address, isConnected, currentChain]);
 
   const {
     data: ratData,
@@ -163,7 +175,21 @@ function DashboardPageContent({
     data: balances,
     isLoading: balancesLoading,
     isError: balancesError,
+    error: balancesErrorDetails,
   } = useBalances(address, currentChain, isConnected);
+
+  // Debug balances
+  useEffect(() => {
+    console.log("Balances Debug:", {
+      balances,
+      balancesLoading,
+      balancesError,
+      balancesErrorDetails,
+      address,
+      currentChain,
+      isConnected,
+    });
+  }, [balances, balancesLoading, balancesError, balancesErrorDetails, address, currentChain, isConnected]);
 
   const { data: activity, isLoading: activityLoading } = useQuery({
     queryKey: ["activity", address],
@@ -180,14 +206,28 @@ function DashboardPageContent({
   // Prepare balance data for modal
   const balanceOptions = balances
     ? [
-        {
-          id: "usdc",
-          label: "USDC Balance",
-          symbol: "USDC",
-          value: balances.balances.usdc.formatted,
-          icon: DollarSign,
-          color: "from-blue-500 to-blue-600",
-        },
+        // Show STX for Stacks, USDC for Starknet
+        ...(currentChain === "stacks"
+          ? [
+              {
+                id: "stx",
+                label: "STX Balance",
+                symbol: "STX",
+                value: balances.balances.stx?.formatted || "0.00",
+                icon: Coins,
+                color: "from-purple-500 to-purple-600",
+              },
+            ]
+          : [
+              {
+                id: "usdc",
+                label: "USDC Balance",
+                symbol: "USDC",
+                value: balances.balances.usdc.formatted,
+                icon: DollarSign,
+                color: "from-blue-500 to-blue-600",
+              },
+            ]),
         {
           id: "adusd",
           label: "ADUSD Balance",
@@ -420,20 +460,37 @@ function DashboardPageContent({
 
         {/* Desktop - All Balance Cards Grid */}
         <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard
-            label="USDC Balance"
-            value={
-              balancesLoading
-                ? "..."
-                : balancesError
-                  ? "$0.00"
-                  : balances
-                    ? `${balances.balances.usdc.formatted}`
-                    : "$0.00"
-            }
-            icon={DollarSign}
-            color="bg-gradient-to-br from-blue-500 to-blue-600"
-          />
+          {currentChain === "stacks" ? (
+            <StatCard
+              label="STX Balance"
+              value={
+                balancesLoading
+                  ? "..."
+                  : balancesError
+                    ? "0.00 STX"
+                    : balances
+                      ? `${balances.balances.stx?.formatted || "0.00"} STX`
+                      : "0.00 STX"
+              }
+              icon={Coins}
+              color="bg-gradient-to-br from-purple-500 to-purple-600"
+            />
+          ) : (
+            <StatCard
+              label="USDC Balance"
+              value={
+                balancesLoading
+                  ? "..."
+                  : balancesError
+                    ? "$0.00"
+                    : balances
+                      ? `${balances.balances.usdc.formatted}`
+                      : "$0.00"
+              }
+              icon={DollarSign}
+              color="bg-gradient-to-br from-blue-500 to-blue-600"
+            />
+          )}
           <StatCard
             label="ADUSD"
             value={
