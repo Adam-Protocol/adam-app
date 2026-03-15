@@ -81,6 +81,7 @@ export const api = {
           adghs: { raw: string; formatted: string; decimals: number };
           adzar: { raw: string; formatted: string; decimals: number };
           usdc: { raw: string; formatted: string; decimals: number };
+          stx?: { raw: string; formatted: string; decimals: number };
         };
       }>(`/token/balances/${wallet}`, {
         params: { chain: chain.toUpperCase() },
