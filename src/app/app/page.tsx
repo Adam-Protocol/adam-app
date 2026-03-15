@@ -39,7 +39,7 @@ const TYPE_CONFIG: Record<string, { icon: any; label: string; color: string }> =
     swap: { icon: RefreshCw, label: "Swap", color: "text-accent-cyan" },
   };
 
-function StatCard({ label, value, icon: Icon, color }: any) {
+function StatCard({ label, value, icon: Icon, color, emoji }: any) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
@@ -51,7 +51,11 @@ function StatCard({ label, value, icon: Icon, color }: any) {
         <div
           className={`w-8 h-8 rounded-xl flex items-center justify-center ${color}`}
         >
-          <Icon size={16} className="text-white" />
+          {emoji ? (
+            <span className="text-lg">{emoji}</span>
+          ) : (
+            <Icon size={16} className="text-white" />
+          )}
         </div>
       </div>
       <p className="text-xl sm:text-2xl font-black text-white truncate">
@@ -206,7 +210,7 @@ function DashboardPageContent({
   // Prepare balance data for modal
   const balanceOptions = balances
     ? [
-        // Show STX for Stacks, USDC for Starknet
+        // Show STX and USDCx for Stacks, USDC for Starknet
         ...(currentChain === "stacks"
           ? [
               {
@@ -216,6 +220,14 @@ function DashboardPageContent({
                 value: balances.balances.stx?.formatted || "0.00",
                 icon: Coins,
                 color: "from-purple-500 to-purple-600",
+              },
+              {
+                id: "usdc",
+                label: "USDC Balance",
+                symbol: "USDCx",
+                value: balances.balances.usdc?.formatted || "0.00",
+                icon: DollarSign,
+                color: "from-blue-500 to-blue-600",
               },
             ]
           : [
@@ -240,7 +252,7 @@ function DashboardPageContent({
           id: "adngn",
           label: "Nigerian Naira",
           symbol: "₦",
-          value: `₦${balances.balances.adngn.formatted}`,
+          value: balances.balances.adngn.formatted,
           icon: Coins,
           color: "from-accent-orange to-brand-500",
           flag: "🇳🇬",
@@ -249,7 +261,7 @@ function DashboardPageContent({
           id: "adkes",
           label: "Kenyan Shilling",
           symbol: "KSh",
-          value: `KSh${balances.balances.adkes.formatted}`,
+          value: balances.balances.adkes.formatted,
           icon: Coins,
           color: "from-green-500 to-brand-500",
           flag: "🇰🇪",
@@ -258,7 +270,7 @@ function DashboardPageContent({
           id: "adghs",
           label: "Ghanaian Cedi",
           symbol: "₵",
-          value: `₵${balances.balances.adghs.formatted}`,
+          value: balances.balances.adghs.formatted,
           icon: Coins,
           color: "from-yellow-500 to-brand-500",
           flag: "🇬🇭",
@@ -267,7 +279,7 @@ function DashboardPageContent({
           id: "adzar",
           label: "South African Rand",
           symbol: "R",
-          value: `R${balances.balances.adzar.formatted}`,
+          value: balances.balances.adzar.formatted,
           icon: Coins,
           color: "from-blue-500 to-brand-500",
           flag: "🇿🇦",
@@ -461,20 +473,38 @@ function DashboardPageContent({
         {/* Desktop - All Balance Cards Grid */}
         <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-4 gap-4">
           {currentChain === "stacks" ? (
-            <StatCard
-              label="STX Balance"
-              value={
-                balancesLoading
-                  ? "..."
-                  : balancesError
-                    ? "0.00 STX"
-                    : balances
-                      ? `${balances.balances.stx?.formatted || "0.00"} STX`
-                      : "0.00 STX"
-              }
-              icon={Coins}
-              color="bg-gradient-to-br from-purple-500 to-purple-600"
-            />
+            <>
+              <StatCard
+                label="STX Balance"
+                value={
+                  balancesLoading
+                    ? "..."
+                    : balancesError
+                      ? "0.00"
+                      : balances
+                        ? `${balances.balances.stx?.formatted || "0.00"}`
+                        : "0.00"
+                }
+                icon={Coins}
+                emoji="🔷"
+                color="bg-gradient-to-br from-purple-500 to-purple-600"
+              />
+              <StatCard
+                label="USDC Balance"
+                value={
+                  balancesLoading
+                    ? "..."
+                    : balancesError
+                      ? "0.00"
+                      : balances
+                        ? `${balances.balances.usdc?.formatted || "0.00"}`
+                        : "0.00"
+                }
+                icon={DollarSign}
+                emoji="🇺🇸"
+                color="bg-gradient-to-br from-blue-500 to-blue-600"
+              />
+            </>
           ) : (
             <StatCard
               label="USDC Balance"
@@ -482,12 +512,13 @@ function DashboardPageContent({
                 balancesLoading
                   ? "..."
                   : balancesError
-                    ? "$0.00"
+                    ? "0.00"
                     : balances
                       ? `${balances.balances.usdc.formatted}`
-                      : "$0.00"
+                      : "0.00"
               }
               icon={DollarSign}
+              emoji="🇺🇸"
               color="bg-gradient-to-br from-blue-500 to-blue-600"
             />
           )}
@@ -497,12 +528,13 @@ function DashboardPageContent({
               balancesLoading
                 ? "..."
                 : balancesError
-                  ? "Error"
+                  ? "0.00"
                   : balances
                     ? `${balances.balances.adusd.formatted}`
                     : "—"
             }
             icon={DollarSign}
+            emoji="💵"
             color="bg-gradient-to-br from-accent-cyan to-brand-500"
           />
           <StatCard
@@ -511,12 +543,13 @@ function DashboardPageContent({
               balancesLoading
                 ? "..."
                 : balancesError
-                  ? "Error"
+                  ? "0.00"
                   : balances
-                    ? `₦${balances.balances.adngn.formatted}`
+                    ? `${balances.balances.adngn.formatted}`
                     : "—"
             }
             icon={Coins}
+            emoji="🇳🇬"
             color="bg-gradient-to-br from-accent-orange to-brand-500"
           />
           <StatCard
@@ -525,12 +558,13 @@ function DashboardPageContent({
               balancesLoading
                 ? "..."
                 : balancesError
-                  ? "Error"
+                  ? "0.00"
                   : balances
-                    ? `KSh${balances.balances.adkes.formatted}`
+                    ? `${balances.balances.adkes.formatted}`
                     : "—"
             }
             icon={Coins}
+            emoji="🇰🇪"
             color="bg-gradient-to-br from-green-500 to-brand-500"
           />
           <StatCard
@@ -539,12 +573,13 @@ function DashboardPageContent({
               balancesLoading
                 ? "..."
                 : balancesError
-                  ? "Error"
+                  ? "0.00"
                   : balances
-                    ? `₵${balances.balances.adghs.formatted}`
+                    ? `${balances.balances.adghs.formatted}`
                     : "—"
             }
             icon={Coins}
+            emoji="🇬🇭"
             color="bg-gradient-to-br from-yellow-500 to-brand-500"
           />
           <StatCard
@@ -553,12 +588,13 @@ function DashboardPageContent({
               balancesLoading
                 ? "..."
                 : balancesError
-                  ? "Error"
+                  ? "0.00"
                   : balances
-                    ? `R${balances.balances.adzar.formatted}`
+                    ? `${balances.balances.adzar.formatted}`
                     : "—"
             }
             icon={Coins}
+            emoji="🇿🇦"
             color="bg-gradient-to-br from-blue-500 to-brand-500"
           />
         </div>
