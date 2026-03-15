@@ -22,6 +22,7 @@ import { generateTransactionId, toWei } from "@/lib/utils";
 import { useSwapToken } from "@/hooks/useSwapToken";
 import { useTokenApprove } from "@/hooks/useTokenApprove";
 import { CONTRACTS } from "@/lib/constants";
+import { getTokenDecimals } from "@/lib/chains/config";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
@@ -44,7 +45,7 @@ const TOKEN_INFO: Record<
 };
 
 export default function SwapPage() {
-  const { address, isConnected } = useMultiChainWallet();
+  const { address, isConnected, currentChain } = useMultiChainWallet();
   const { register, handleSubmit, watch, setValue } = useForm<SwapForm>({
     defaultValues: { token_in: "adusd", token_out: "adngn", amount_in: "" },
   });
@@ -54,6 +55,7 @@ export default function SwapPage() {
       <SwapPageContent
         address={address}
         isConnected={isConnected}
+        currentChain={currentChain}
         register={register}
         handleSubmit={handleSubmit}
         watch={watch}
@@ -66,6 +68,7 @@ export default function SwapPage() {
 function SwapPageContent({
   address,
   isConnected,
+  currentChain,
   register,
   handleSubmit,
   watch,
@@ -118,15 +121,17 @@ function SwapPageContent({
       setTxSuccess(false);
       const secret = BigInt(Math.floor(Math.random() * 1e15));
 
-      // Convert amount to wei (18 decimals for ADUSD/ADNGN) using toWei utility
-      const amountWei = toWei(data.amount_in, 18);
+      // Convert amount to wei using chain-specific decimals
+      const tokenInDecimals = getTokenDecimals(data.token_in.toUpperCase(), currentChain);
+      const tokenOutDecimals = getTokenDecimals(data.token_out.toUpperCase(), currentChain);
+      const amountWei = toWei(data.amount_in, tokenInDecimals);
       const commitment = hash.computePedersenHash(
         "0x" + amountWei.toString(16),
         "0x" + secret.toString(16),
       );
 
       // Calculate minimum output with slippage protection using toWei
-      const minOut = toWei((estimatedOut * 0.99).toString(), 18);
+      const minOut = toWei((estimatedOut * 0.99).toString(), tokenOutDecimals);
 
       // Generate custom transaction ID
       const transactionId = generateTransactionId("swap");
