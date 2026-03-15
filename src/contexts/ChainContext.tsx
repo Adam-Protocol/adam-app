@@ -1,3 +1,30 @@
+/**
+ * Multi-Chain Context Provider
+ * 
+ * This context manages wallet connections across multiple blockchains with
+ * complete separation of concerns. Each chain has its own isolated adapter
+ * that handles wallet-specific logic without interfering with other chains.
+ * 
+ * Architecture:
+ * - Starknet: Uses @starknet-react/core hooks + starknetkit for wallet UI
+ * - Stacks: Uses @stacks/connect with localStorage session management
+ * - Each adapter is completely independent with no shared state
+ * 
+ * Separation of Concerns:
+ * 1. Starknet adapter is created via useMemo and depends on Starknet hooks
+ * 2. Stacks adapter is created once on mount and manages its own state
+ * 3. Only the active chain's adapter is used for operations
+ * 4. Switching chains doesn't affect the other chain's connection state
+ * 
+ * Adding New Chains:
+ * 1. Create a new adapter implementing ChainAdapter interface
+ * 2. Add chain type to ChainType enum
+ * 3. Initialize adapter in this provider
+ * 4. Add to adapterRegistry
+ * 
+ * No business logic needs to change - the adapter pattern handles everything.
+ */
+
 "use client";
 
 import React, {
@@ -28,24 +55,22 @@ export function ChainProvider({ children }: { children: React.ReactNode }) {
   const [currentChain, setCurrentChain] = useState<ChainType>(
     ChainType.STARKNET,
   );
-  // Stacks adapter state
-  const [stacksAdapter, setStacksAdapter] = useState<StacksAdapter | null>(
-    null,
-  );
-  // State to track Stacks account and trigger re-renders for Stacks
+  
+  // Stacks adapter state - completely isolated from Starknet
+  const [stacksAdapter, setStacksAdapter] = useState<StacksAdapter | null>(null);
   const [stacksAccount, setStacksAccount] = useState<WalletAccount | null>(null);
 
-  // Starknet hooks
+  // Starknet hooks - only used when currentChain is STARKNET
   const starknetAccount = useAccount();
   const { connect: starknetConnect, connectors } = useConnect();
   const { disconnectAsync: starknetDisconnect } = useDisconnect();
   const { starknetkitConnectModal } = useStarknetkitConnectModal({
-    connectors: connectors as StarknetkitConnector[],
+    connectors: connectors as unknown as StarknetkitConnector[],
   });
 
-  // Initialize Stacks adapter
+  // Initialize Stacks adapter once on mount
   useEffect(() => {
-    if (typeof window !== "undefined") {
+    if (typeof window !== "undefined" && !stacksAdapter) {
       const adapter = new StacksAdapter();
       
       // Subscribe to account changes to trigger re-renders
@@ -53,20 +78,28 @@ export function ChainProvider({ children }: { children: React.ReactNode }) {
         setStacksAccount(account);
       });
 
-      // Eagerly try to load account from storage
-      adapter.getAccount();
+      // Check if there's an existing session
+      const existingAccount = adapter.getAccount();
+      if (existingAccount) {
+        setStacksAccount(existingAccount);
+      }
       
       setStacksAdapter(adapter);
     }
-  }, []);
+  }, [stacksAdapter]);
 
-  // Create Starknet adapter
+  // Create Starknet adapter - memoized to prevent unnecessary recreations
   const starknetAdapter = useMemo(() => {
     const connectFn = async () => {
-      const { connector } = await starknetkitConnectModal();
-      if (!connector) return null;
-      await starknetConnect({ connector: connector as Connector });
-      return connector;
+      try {
+        const { connector } = await starknetkitConnectModal();
+        if (!connector) return null;
+        await starknetConnect({ connector: connector as Connector });
+        return connector;
+      } catch (error) {
+        console.error("Starknet connection error:", error);
+        return null;
+      }
     };
 
     return new StarknetAdapter(connectFn, starknetDisconnect, starknetAccount);
@@ -78,8 +111,11 @@ export function ChainProvider({ children }: { children: React.ReactNode }) {
   ]);
 
   /**
-   * Registry map — adding a new chain is a one-line addition here.
-   * No if/else chain checks anywhere in the business layer.
+   * Adapter registry with complete separation of concerns:
+   * - Each chain has its own isolated adapter instance
+   * - Starknet uses React hooks from @starknet-react/core
+   * - Stacks uses @stacks/connect with localStorage session management
+   * - No cross-chain interference or shared state
    */
   const adapterRegistry = useMemo<Partial<Record<ChainType, ChainAdapter>>>(
     () => ({
@@ -89,6 +125,7 @@ export function ChainProvider({ children }: { children: React.ReactNode }) {
     [starknetAdapter, stacksAdapter],
   );
 
+  // Get the active adapter based on current chain selection
   const adapter = adapterRegistry[currentChain] ?? null;
   const account = adapter?.getAccount() ?? null;
   const isConnected = adapter?.isConnected() ?? false;
