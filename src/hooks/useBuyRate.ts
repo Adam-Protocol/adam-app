@@ -184,7 +184,7 @@ export function useBuyRate(
       console.log("Net out:", netOut.toString());
 
       // Convert to human-readable format (18 decimals for ADUSD/ADNGN)
-      const formatted = (Number(netOut) / 1e18).toFixed(6);
+      const formatted = (Number(netOut) / 1e18).toFixed(3);
       console.log("Formatted output:", formatted);
       setOutputAmount(formatted);
     } catch (error) {
@@ -193,10 +193,11 @@ export function useBuyRate(
     }
   }, [rate, amountIn, feeBps]);
 
-  // Calculate effective rate (accounting for fees)
+  // Calculate effective rate (accounting for fees and decimal difference: USDC=6dp, token_out=18dp)
+  // rate is expressed as (token_out_units * 1e18) / usdc_units, so we scale by 1e6/1e18 = 1e-12
   const effectiveRate =
     rate && feeBps !== undefined
-      ? (Number(rate) / Number(RATE_PRECISION)) * (1 - feeBps / 10000)
+      ? (Number(rate) / Number(RATE_PRECISION)) * (1 - feeBps / 10000) * 1e-12
       : null;
 
   return {
