@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { useAccount, useContract } from "@starknet-react/core";
-import { Contract, uint256 } from "starknet";
+import { useAccount } from "@starknet-react/core";
+import { Contract, uint256, CallData } from "starknet";
 import { CONTRACTS } from "@/lib/constants";
+import { checkTokenAllowance } from "@/lib/token";
 
 // Minimal ABI for the buy function
 const SWAP_ABI = [
@@ -26,7 +27,7 @@ const SWAP_ABI = [
 ];
 
 export function useBuyToken() {
-  const { account } = useAccount();
+  const { account, address } = useAccount();
   const [isExecuting, setIsExecuting] = useState(false);
 
   const executeBuy = async (
@@ -34,7 +35,7 @@ export function useBuyToken() {
     tokenOut: "adusd" | "adngn" | "adkes" | "adghs" | "adzar",
     commitment: string,
   ): Promise<string> => {
-    if (!account) {
+    if (!account || !address) {
       throw new Error("Wallet not connected");
     }
 
@@ -50,24 +51,44 @@ export function useBuyToken() {
               : tokenOut === "adghs"
                 ? CONTRACTS.ADGHS
                 : CONTRACTS.ADZAR;
+
       const amountU256 = uint256.bnToUint256(amountIn);
 
-      // Create contract instance
-      const swapContract = new Contract({
-        abi: SWAP_ABI,
-        address: CONTRACTS.ADAM_SWAP,
-        providerOrAccount: account,
-      });
-
-      // Execute buy transaction
-      const result = await swapContract.buy(
+      // Check current allowance
+      const currentAllowance = await checkTokenAllowance(
         CONTRACTS.USDC,
-        amountU256,
-        tokenOutAddress,
-        commitment,
+        address,
+        CONTRACTS.ADAM_SWAP,
+        account as any,
       );
 
-      // Wait for transaction to be accepted
+      // Build call list — prepend approve only if allowance is insufficient
+      const calls = [];
+
+      if (currentAllowance < amountIn) {
+        calls.push({
+          contractAddress: CONTRACTS.USDC,
+          entrypoint: "approve",
+          calldata: CallData.compile({
+            spender: CONTRACTS.ADAM_SWAP,
+            amount: amountU256,
+          }),
+        });
+      }
+
+      calls.push({
+        contractAddress: CONTRACTS.ADAM_SWAP,
+        entrypoint: "buy",
+        calldata: CallData.compile({
+          token_in: CONTRACTS.USDC,
+          amount_in: amountU256,
+          token_out: tokenOutAddress,
+          commitment,
+        }),
+      });
+
+      // Single signature for approve + buy (or just buy if allowance is sufficient)
+      const result = await account.execute(calls);
       await account.waitForTransaction(result.transaction_hash);
 
       return result.transaction_hash;

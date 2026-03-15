@@ -18,7 +18,6 @@ import { hash } from "starknet";
 import { WalletGuard } from "@/components/auth/WalletGuard";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { generateTransactionId, toWei } from "@/lib/utils";
-import { useTokenApprove } from "@/hooks/useTokenApprove";
 import { useBuyToken } from "@/hooks/useBuyToken";
 import { useBuyRate } from "@/hooks/useBuyRate";
 
@@ -78,7 +77,6 @@ function BuyPageContent({
   tokenOut,
 }: any) {
   const [txSuccess, setTxSuccess] = useState(false);
-  const { approveUSDC, isApproving } = useTokenApprove();
   const { executeBuy, isExecuting } = useBuyToken();
 
   // Watch amount input for real-time calculation
@@ -98,26 +96,8 @@ function BuyPageContent({
         // Calculate amount in USDC (6 decimals) using toWei utility
         const amountInWei = toWei(data.amount_in, 6);
 
-        // Step 1: Check and approve USDC spend if needed
-        toast.info("Checking USDC allowance...", { duration: 1000 });
-        const approveTxHash = await approveUSDC(amountInWei);
-        console.log("Approval txHash", approveTxHash);
-
-        if (approveTxHash) {
-          // Approval was needed, executed, and confirmed
-          toast.success("USDC approved and confirmed!", {
-            description: `Tx: ${approveTxHash.slice(0, 10)}...`,
-          });
-        } else {
-          // Sufficient allowance already exists
-          toast.info("Sufficient USDC allowance detected", {
-            description: "Proceeding with buy...",
-          });
-        }
-
-        // Step 2: Generate commitment client-side
+        // Step 1: Generate commitment client-side
         const secret = BigInt(Math.floor(Math.random() * 1e15));
-        // Use the wei amount for commitment (not the decimal input)
         const commitment = hash.computePedersenHash(
           "0x" + amountInWei.toString(16),
           "0x" + secret.toString(16),
@@ -127,22 +107,20 @@ function BuyPageContent({
         const secretKey = `adam_secret_${commitment}`;
         sessionStorage.setItem(secretKey, secret.toString());
 
-        // Step 3: Execute buy transaction from user's wallet
-        toast.info("Executing buy transaction...", { duration: 1000 });
+        // Step 2: Execute approve + buy in a single multicall (one signature)
+        toast.info("Approve & sign in your wallet...", { duration: 2000 });
         const buyTxHash = await executeBuy(
           amountInWei,
           data.token_out,
           commitment,
         );
-        console.log("Buy txHash", buyTxHash);
 
-        toast.success("Buy transaction confirmed!", {
+        toast.success("Transaction confirmed!", {
           description: `Tx: ${buyTxHash.slice(0, 10)}...`,
         });
 
-        // Step 4: Notify backend to track the transaction
+        // Step 3: Notify backend to track the transaction
         const transactionId = generateTransactionId("buy");
-        toast.info("Recording transaction...", { duration: 1000 });
 
         return axios
           .post(`${API}/token/buy`, {
@@ -151,7 +129,7 @@ function BuyPageContent({
             token_out: data.token_out,
             commitment,
             transactionId,
-            tx_hash: buyTxHash, // Include the transaction hash
+            tx_hash: buyTxHash,
           })
           .then((r) => ({
             ...r.data,
@@ -289,7 +267,7 @@ function BuyPageContent({
                     <LoadingSpinner size="sm" />
                   ) : (
                     <span className="text-white font-bold text-lg">
-                      {outputAmount} {tokenOut.toUpperCase()}
+                      {Number(outputAmount).toFixed(2)} {tokenOut.toUpperCase()}
                     </span>
                   )}
                 </div>
@@ -297,7 +275,7 @@ function BuyPageContent({
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-white/40">Exchange rate</span>
                     <span className="text-white/60">
-                      1 USDC = {rate.toFixed(6)} {tokenOut.toUpperCase()}
+                      1 USDC = {rate.toFixed(2)} {tokenOut.toUpperCase()}
                     </span>
                   </div>
                 )}
@@ -329,20 +307,14 @@ function BuyPageContent({
 
           <button
             type="submit"
-            disabled={
-              !isConnected || mutation.isPending || isApproving || isExecuting
-            }
+            disabled={!isConnected || mutation.isPending || isExecuting}
             className="btn-neon w-full py-3.5 sm:py-4 rounded-xl sm:rounded-2xl bg-gradient-to-r from-brand-500 to-accent-cyan text-white font-bold text-base sm:text-lg shadow-lg shadow-brand-500/30 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-brand-500/50 transition-all active:scale-98 flex items-center justify-center gap-2"
           >
-            {mutation.isPending || isApproving || isExecuting ? (
+            {mutation.isPending || isExecuting ? (
               <>
                 <LoadingSpinner size="sm" className="text-white" />
                 <span>
-                  {isApproving
-                    ? "Approving..."
-                    : isExecuting
-                      ? "Executing..."
-                      : "Processing..."}
+                  {isExecuting ? "Executing..." : "Processing..."}
                 </span>
               </>
             ) : txSuccess ? (
