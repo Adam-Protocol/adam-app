@@ -122,11 +122,15 @@ function TxCard({ tx }: { tx: any }) {
 }
 
 export default function DashboardPage() {
-  const { address, isConnected } = useMultiChainWallet();
+  const { address, isConnected, currentChain } = useMultiChainWallet();
 
   return (
     <WalletGuard>
-      <DashboardPageContent address={address} isConnected={isConnected} />
+      <DashboardPageContent
+        address={address}
+        isConnected={isConnected}
+        currentChain={currentChain}
+      />
     </WalletGuard>
   );
 }
@@ -134,9 +138,11 @@ export default function DashboardPage() {
 function DashboardPageContent({
   address,
   isConnected,
+  currentChain,
 }: {
   address: string | undefined;
   isConnected: boolean | undefined;
+  currentChain: any;
 }) {
   const [isBalanceModalOpen, setIsBalanceModalOpen] = useState(false);
   const [selectedBalance, setSelectedBalance] = useState("usdc");
@@ -157,7 +163,7 @@ function DashboardPageContent({
     data: balances,
     isLoading: balancesLoading,
     isError: balancesError,
-  } = useBalances(address, isConnected);
+  } = useBalances(address, currentChain, isConnected);
 
   const { data: activity, isLoading: activityLoading } = useQuery({
     queryKey: ["activity", address],
