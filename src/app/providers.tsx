@@ -12,8 +12,13 @@ import {
 import { sepolia, mainnet } from "@starknet-react/chains";
 import { Toaster } from "sonner";
 import { InjectedConnector } from "starknetkit/injected";
-import { RpcProvider, constants } from "starknet";
 import { ChainProvider } from "@/contexts/ChainContext";
+import { initStacksProviderGuard } from "@/lib/stacks-provider-guard";
+
+// Initialize guard immediately when module loads (before React renders)
+if (typeof window !== "undefined") {
+  initStacksProviderGuard();
+}
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -24,23 +29,27 @@ const queryClient = new QueryClient({
 export function Providers({ children }: { children: React.ReactNode }) {
   const connectors = [
     new InjectedConnector({
-      options: { id: "argentX", name: "Argent X" },
-    }),
+      options: { 
+        id: "argentX", 
+        name: "Argent X",
+      },
+    }) as Connector,
     new InjectedConnector({
-      options: { id: "braavos", name: "Braavos" },
-    }),
+      options: { 
+        id: "braavos", 
+        name: "Braavos",
+      },
+    }) as Connector,
   ];
 
-  // Use custom RPC provider with v0.10 support
+  // Use custom RPC provider with proper configuration
   const rpcUrl =
     process.env.NEXT_PUBLIC_STARKNET_RPC_URL ||
-    "https://starknet-sepolia.g.alchemy.com/starknet/version/rpc/v0_10/5QQMV6kqa3iDaH_EbNhTw";
+    "https://starknet-sepolia.g.alchemy.com/starknet/version/rpc/v0_7/5QQMV6kqa3iDaH_EbNhTw";
 
   const provider = jsonRpcProvider({
     rpc: () => ({
       nodeUrl: rpcUrl,
-      // For v0.10, we need to specify the chain ID properly
-      chainId: constants.StarknetChainId.SN_SEPOLIA,
     }),
   });
 
