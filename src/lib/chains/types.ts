@@ -84,7 +84,10 @@ export interface TransactionParams {
 export interface TokenInfo {
   symbol: string;
   name: string;
-  decimals: number;
+  decimals: number | {
+    [ChainType.STARKNET]?: number;
+    [ChainType.STACKS]?: number;
+  };
   addresses: {
     [ChainType.STARKNET]?: string;
     [ChainType.STACKS]?: string;

@@ -42,7 +42,10 @@ export const MULTI_CHAIN_TOKENS: Record<string, TokenInfo> = {
   ADUSD: {
     symbol: "ADUSD",
     name: "Adam USD",
-    decimals: 18,
+    decimals: {
+      [ChainType.STARKNET]: 18,
+      [ChainType.STACKS]: 6,
+    },
     addresses: {
       [ChainType.STARKNET]: process.env.NEXT_PUBLIC_ADUSD_ADDRESS || "",
       [ChainType.STACKS]: process.env.NEXT_PUBLIC_STACKS_ADUSD_ADDRESS || "",
@@ -51,7 +54,10 @@ export const MULTI_CHAIN_TOKENS: Record<string, TokenInfo> = {
   ADNGN: {
     symbol: "ADNGN",
     name: "Adam NGN",
-    decimals: 18,
+    decimals: {
+      [ChainType.STARKNET]: 18,
+      [ChainType.STACKS]: 6,
+    },
     addresses: {
       [ChainType.STARKNET]: process.env.NEXT_PUBLIC_ADNGN_ADDRESS || "",
       [ChainType.STACKS]: process.env.NEXT_PUBLIC_STACKS_ADNGN_ADDRESS || "",
@@ -60,7 +66,10 @@ export const MULTI_CHAIN_TOKENS: Record<string, TokenInfo> = {
   ADKES: {
     symbol: "ADKES",
     name: "Adam KES",
-    decimals: 18,
+    decimals: {
+      [ChainType.STARKNET]: 18,
+      [ChainType.STACKS]: 6,
+    },
     addresses: {
       [ChainType.STARKNET]: process.env.NEXT_PUBLIC_ADKES_ADDRESS || "",
       [ChainType.STACKS]: process.env.NEXT_PUBLIC_STACKS_ADKES_ADDRESS || "",
@@ -69,7 +78,10 @@ export const MULTI_CHAIN_TOKENS: Record<string, TokenInfo> = {
   ADGHS: {
     symbol: "ADGHS",
     name: "Adam GHS",
-    decimals: 18,
+    decimals: {
+      [ChainType.STARKNET]: 18,
+      [ChainType.STACKS]: 6,
+    },
     addresses: {
       [ChainType.STARKNET]: process.env.NEXT_PUBLIC_ADGHS_ADDRESS || "",
       [ChainType.STACKS]: process.env.NEXT_PUBLIC_STACKS_ADGHS_ADDRESS || "",
@@ -78,7 +90,10 @@ export const MULTI_CHAIN_TOKENS: Record<string, TokenInfo> = {
   ADZAR: {
     symbol: "ADZAR",
     name: "Adam ZAR",
-    decimals: 18,
+    decimals: {
+      [ChainType.STARKNET]: 18,
+      [ChainType.STACKS]: 6,
+    },
     addresses: {
       [ChainType.STARKNET]: process.env.NEXT_PUBLIC_ADZAR_ADDRESS || "",
       [ChainType.STACKS]: process.env.NEXT_PUBLIC_STACKS_ADZAR_ADDRESS || "",
@@ -91,3 +106,17 @@ export const SWAP_CONTRACT_ADDRESSES: Record<ChainType, string> = {
   [ChainType.STARKNET]: process.env.NEXT_PUBLIC_ADAM_SWAP_ADDRESS || "",
   [ChainType.STACKS]: process.env.NEXT_PUBLIC_STACKS_ADAM_SWAP_ADDRESS || "",
 };
+
+/**
+ * Get the decimals for a token on a specific chain
+ */
+export function getTokenDecimals(tokenSymbol: string, chain: ChainType): number {
+  const token = MULTI_CHAIN_TOKENS[tokenSymbol];
+  if (!token) return 18; // default fallback
+  
+  if (typeof token.decimals === 'number') {
+    return token.decimals;
+  }
+  
+  return token.decimals[chain] || 18;
+}
