@@ -12,7 +12,8 @@
   "dependencies": {
     "@heroui/react": "^2.8.9",
     "@heroui/theme": "^2.4.22",
-    "@stacks/connect": "^8.2.5",
+    "@stacks/connect": "^8.2.6",
+    "@stacks/network": "^7.3.1",
     "@stacks/transactions": "^7.2.0",
     "@starknet-react/chains": "^5.0.3",
     "@starknet-react/core": "^5.0.3",

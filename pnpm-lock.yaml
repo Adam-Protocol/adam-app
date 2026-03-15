@@ -15,8 +15,11 @@ importers:
         specifier: ^2.4.22
         version: 2.4.26(tailwindcss@3.4.19(yaml@2.8.2))
       '@stacks/connect':
-        specifier: ^8.2.5
-        version: 8.2.5(@types/react@19.2.14)(bufferutil@4.1.0)(lit@3.3.0)(react@19.2.4)(typescript@5.9.3)(utf-8-validate@6.0.6)(zod@3.25.76)
+        specifier: ^8.2.6
+        version: 8.2.6(@types/react@19.2.14)(bufferutil@4.1.0)(lit@3.3.0)(react@19.2.4)(typescript@5.9.3)(utf-8-validate@6.0.6)(zod@3.25.76)
+      '@stacks/network':
+        specifier: ^7.3.1
+        version: 7.3.1
       '@stacks/transactions':
         specifier: ^7.2.0
         version: 7.3.1
@@ -2912,8 +2915,8 @@ packages:
   '@stacks/connect-ui@8.1.2':
     resolution: {integrity: sha512-C3T1QmEGJocnmsamQnKJvlvHFfjr/FDebLSokrAAwTr6x76JPS5xuACB7u3a7+vVMUdINV+pFvfn442oic2R5w==}
 
-  '@stacks/connect@8.2.5':
-    resolution: {integrity: sha512-pWyxib0sipkOhxITpoPNrocn2aHnGOIY6OBvzZKHjya11t5OTFojjeycEM3k+KrCBE/l6NqkWlU5cepR3FtDSg==}
+  '@stacks/connect@8.2.6':
+    resolution: {integrity: sha512-MXkMVIDPPQLlL83UKb3rNdm7Gh/LQGdPhSsq+sL36KCM6qM1by8+igxX/R/5G+rgn6KdCG+iIRTh4TkAqntrTg==}
 
   '@stacks/network@6.17.0':
     resolution: {integrity: sha512-numHbfKjwco/rbkGPOEz8+FcJ2nBnS/tdJ8R422Q70h3SiA9eqk9RjSzB8p4JP8yW1SZvW+eihADHfMpBuZyfw==}
@@ -11776,7 +11779,7 @@ snapshots:
     dependencies:
       '@babel/runtime': 7.28.6
       '@noble/curves': 1.9.7
-      '@noble/hashes': 1.4.0
+      '@noble/hashes': 1.8.0
       '@solana/buffer-layout': 4.0.1
       '@solana/codecs-numbers': 2.3.0(typescript@5.9.3)
       agentkeepalive: 4.6.0
@@ -11807,7 +11810,7 @@ snapshots:
     dependencies:
       '@stencil/core': 4.43.2
 
-  '@stacks/connect@8.2.5(@types/react@19.2.14)(bufferutil@4.1.0)(lit@3.3.0)(react@19.2.4)(typescript@5.9.3)(utf-8-validate@6.0.6)(zod@3.25.76)':
+  '@stacks/connect@8.2.6(@types/react@19.2.14)(bufferutil@4.1.0)(lit@3.3.0)(react@19.2.4)(typescript@5.9.3)(utf-8-validate@6.0.6)(zod@3.25.76)':
     dependencies:
       '@reown/appkit': 1.7.17(@types/react@19.2.14)(bufferutil@4.1.0)(lit@3.3.0)(react@19.2.4)(typescript@5.9.3)(utf-8-validate@6.0.6)(zod@3.25.76)
       '@reown/appkit-universal-connector': 1.7.17(@types/react@19.2.14)(bufferutil@4.1.0)(lit@3.3.0)(react@19.2.4)(typescript@5.9.3)(utf-8-validate@6.0.6)(zod@3.25.76)
@@ -12110,7 +12113,7 @@ snapshots:
 
   '@types/connect@3.4.38':
     dependencies:
-      '@types/node': 22.19.13
+      '@types/node': 22.19.15
     optional: true
 
   '@types/d3-array@3.2.2': {}
@@ -12209,12 +12212,12 @@ snapshots:
 
   '@types/ws@7.4.7':
     dependencies:
-      '@types/node': 22.19.13
+      '@types/node': 22.19.15
     optional: true
 
   '@types/ws@8.18.1':
     dependencies:
-      '@types/node': 22.19.13
+      '@types/node': 22.19.15
     optional: true
 
   '@types/yargs-parser@21.0.3': {}
