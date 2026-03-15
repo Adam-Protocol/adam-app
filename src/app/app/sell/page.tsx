@@ -26,6 +26,7 @@ import { useState, useEffect } from "react";
 import { BankSearchDropdown } from "@/components/ui/BankSearchDropdown";
 import { useSellToken } from "@/hooks/useSellToken";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
+import { getTokenDecimals } from "@/lib/chains/config";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
@@ -38,7 +39,7 @@ type SellForm = {
 };
 
 export default function SellPage() {
-  const { address, isConnected } = useMultiChainWallet();
+  const { address, isConnected, currentChain } = useMultiChainWallet();
   const {
     register,
     handleSubmit,
@@ -54,6 +55,7 @@ export default function SellPage() {
       <SellPageContent
         address={address}
         isConnected={isConnected}
+        currentChain={currentChain}
         register={register}
         handleSubmit={handleSubmit}
         watch={watch}
@@ -94,6 +96,7 @@ const CURRENCY_INFO: Record<string, { flag: string; name: string }> = {
 function SellPageContent({
   address,
   isConnected,
+  currentChain,
   register,
   handleSubmit,
   watch,
@@ -234,8 +237,9 @@ function SellPageContent({
           "0x" + nullifierKey.toString(16),
         );
 
-        // Calculate amount in wei (18 decimals) using toWei utility
-        const amountInWei = toWei(data.amount, 18);
+        // Calculate amount in wei using chain-specific decimals
+        const tokenDecimals = getTokenDecimals(data.token_in.toUpperCase(), currentChain);
+        const amountInWei = toWei(data.amount, tokenDecimals);
 
         // Step 1: Execute sell transaction from user's wallet
         toast.info("Executing sell transaction...", { duration: 1000 });
