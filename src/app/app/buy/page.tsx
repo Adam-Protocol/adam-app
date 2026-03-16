@@ -108,7 +108,7 @@ function BuyPageContent({
         sessionStorage.setItem(secretKey, secret.toString());
 
         // Step 2: Execute approve + buy in a single multicall (one signature)
-        toast.info("Approve & sign in your wallet...", { duration: 2000 });
+        toast.info("Approve & sign in your wallet...", { duration: 1000 });
         const buyTxHash = await executeBuy(
           amountInWei,
           data.token_out,
