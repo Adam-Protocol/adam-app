@@ -18,7 +18,7 @@ import { hash } from "starknet";
 import { WalletGuard } from "@/components/auth/WalletGuard";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { generateTransactionId, toWei } from "@/lib/utils";
-import { useBuyToken } from "@/hooks/useBuyToken";
+import { useMultiChainBuy } from "@/hooks/useMultiChainBuy";
 import { useBuyRate } from "@/hooks/useBuyRate";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
@@ -77,7 +77,7 @@ function BuyPageContent({
   tokenOut,
 }: any) {
   const [txSuccess, setTxSuccess] = useState(false);
-  const { executeBuy, isExecuting } = useBuyToken();
+  const { executeBuy, isExecuting } = useMultiChainBuy();
 
   // Watch amount input for real-time calculation
   const amountIn = watch("amount_in");
@@ -267,7 +267,7 @@ function BuyPageContent({
                     <LoadingSpinner size="sm" />
                   ) : (
                     <span className="text-white font-bold text-lg">
-                      {Number(outputAmount).toFixed(2)} {tokenOut.toUpperCase()}
+                      {Number(outputAmount).toFixed(3)} {tokenOut.toUpperCase()}
                     </span>
                   )}
                 </div>
@@ -275,7 +275,7 @@ function BuyPageContent({
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-white/40">Exchange rate</span>
                     <span className="text-white/60">
-                      1 USDC = {rate.toFixed(2)} {tokenOut.toUpperCase()}
+                      1 USDC = {rate.toFixed(3)} {tokenOut.toUpperCase()}
                     </span>
                   </div>
                 )}
