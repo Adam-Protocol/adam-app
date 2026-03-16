@@ -110,17 +110,28 @@ export function useMultiChainBuy() {
 
     const tokenOutAddress =
       MULTI_CHAIN_TOKENS[tokenOut.toUpperCase()].addresses[ChainType.STACKS];
-    const usdcAddress = MULTI_CHAIN_TOKENS.USDC.addresses[ChainType.STACKS];
 
-    if (!tokenOutAddress || !usdcAddress) {
+    console.log('executeStacksBuy params:', {
+      tokenOut,
+      tokenOutAddress,
+      amountIn: amountIn.toString(),
+      swapContractAddress,
+    });
+
+    if (!tokenOutAddress) {
       throw new Error("Token address not configured for Stacks");
     }
 
-    // Stacks uses Clarity values, convert accordingly
+    if (!swapContractAddress) {
+      throw new Error("Swap contract address not configured for Stacks");
+    }
+
+    // Stacks buy function signature: (buy (amount-in uint) (token-out principal))
+    // It only takes amount-in and token-out, not token-in (USDC is hardcoded in contract)
     const result = await adapter.executeTransaction({
       contractAddress: swapContractAddress,
       functionName: "buy",
-      args: [usdcAddress, amountIn.toString(), tokenOutAddress, commitment],
+      args: [amountIn, tokenOutAddress],
     });
 
     return result.hash;
