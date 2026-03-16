@@ -1,37 +1,3 @@
-/**
- * Stacks Blockchain Adapter
- * 
- * This adapter provides a clean interface for Stacks wallet integration using
- * the modern @stacks/connect API (v8+). It implements complete separation of
- * concerns from other blockchain adapters (e.g., Starknet).
- * 
- * Key Features:
- * - Uses the new connect() and request() API from @stacks/connect
- * - Persistent session management via localStorage
- * - No dependency on Starknet or other chain implementations
- * - Automatic session restoration on page reload
- * - 24-hour session expiration for security
- * 
- * Session Management:
- * - Sessions are stored in localStorage under "adam-stacks-session"
- * - Sessions include address, publicKey, and timestamp
- * - Expired sessions (>24h) are automatically cleared
- * - Session state is independent of Starknet wallet state
- * 
- * API Methods Used:
- * - connect(): Initiates wallet connection with wallet selection UI
- * - isConnected(): Checks if a wallet is currently connected
- * - getLocalStorage(): Retrieves cached wallet data
- * - request('stx_getAccounts'): Gets full account details
- * - request('stx_callContract'): Executes contract calls
- * - request('stx_callReadOnly'): Reads contract state
- * - disconnect(): Clears wallet connection
- * 
- * References:
- * - Stacks Connect Docs: https://docs.stacks.co/build/stacks-connect/connect-wallet
- * - API Reference: https://docs.stacks.co/reference/stacks.js/stacks-connect
- */
-
 import {
   ChainAdapter,
   ChainType,
@@ -268,46 +234,119 @@ export class StacksAdapter implements ChainAdapter {
       const request = stacksConnect.request;
       
       const { Cl } = await import("@stacks/transactions");
-      
-      const [contractAddress, contractName] = params.contractAddress.split(".");
+
+      console.log('Raw transaction params:', {
+        contractAddress: params.contractAddress,
+        functionName: params.functionName,
+        args: params.args,
+        argsTypes: params.args.map(arg => typeof arg),
+      });
 
       // Convert args to Clarity values based on type
-      const clarityArgs = params.args.map((arg: any) => {
+      const clarityArgs = params.args.map((arg: any, index: number) => {
+        console.log(`Processing arg ${index}:`, { value: arg, type: typeof arg });
+        
         if (typeof arg === "string") {
-          // Check if it's a contract address (contains a dot)
-          if (arg.includes(".")) {
-            const [addr, name] = arg.split(".");
-            return Cl.contractPrincipal(addr, name);
-          }
-          // Check if it's a principal address
+          // Check if it's a principal (standard or contract address)
           if (arg.startsWith("ST") || arg.startsWith("SP")) {
-            return Cl.standardPrincipal(arg);
+            console.log(`Converting to principal: ${arg}`);
+            return Cl.principal(arg); // Auto-detects standard vs contract principal
           }
           // Otherwise treat as string/buffer
+          console.log(`Converting to stringUtf8: ${arg}`);
           return Cl.stringUtf8(arg);
         }
-        if (typeof arg === "bigint" || typeof arg === "number") {
+        if (typeof arg === "bigint") {
+          console.log(`Converting bigint to uint: ${arg.toString()}`);
+          return Cl.uint(arg);
+        }
+        if (typeof arg === "number") {
+          console.log(`Converting number to uint: ${arg}`);
           return Cl.uint(arg);
         }
         if (arg === null || arg === undefined) {
+          console.log(`Converting null/undefined to none`);
           return Cl.none();
         }
+        console.log(`Using arg as-is (already Clarity value)`);
         return arg; // Already a Clarity value
       });
 
-      const response = await request("stx_callContract", {
-        contractAddress,
-        contractName,
+      console.log('Stacks transaction params:', {
+        contract: params.contractAddress,
         functionName: params.functionName,
         functionArgs: clarityArgs,
+        functionArgsCount: clarityArgs.length,
       });
 
-      return {
-        hash: response.txid,
-        chainType: ChainType.STACKS,
-      };
+      // Get network from environment
+      const network = process.env.NEXT_PUBLIC_STACKS_NETWORK || 'testnet';
+
+      console.log('Attempting stx_callContract with request API...');
+
+      try {
+        // Try the new request API first
+        const response = await request("stx_callContract", {
+          contract: params.contractAddress,
+          functionName: params.functionName,
+          functionArgs: clarityArgs,
+          network: network,
+          postConditionMode: 'allow', // Allow the transaction without post conditions
+        });
+
+        return {
+          hash: response.txid,
+          chainType: ChainType.STACKS,
+        };
+      } catch (requestError) {
+        console.warn("request API failed, trying legacy openContractCall...", requestError);
+        
+        // Fallback to legacy openContractCall API
+        const { openContractCall } = stacksConnect;
+        
+        // Split contract address into address and name
+        const [contractAddress, contractName] = params.contractAddress.split('.');
+        
+        await openContractCall({
+          contractAddress,
+          contractName,
+          functionName: params.functionName,
+          functionArgs: clarityArgs,
+          network: network,
+          postConditionMode: 'allow',
+          onFinish: (data: any) => {
+            console.log('Transaction submitted:', data);
+          },
+          onCancel: () => {
+            throw new Error('User canceled transaction');
+          },
+        });
+
+        // openContractCall doesn't return the txid directly, so we return a placeholder
+        // The actual txid will be in the onFinish callback
+        return {
+          hash: 'pending',
+          chainType: ChainType.STACKS,
+        };
+      }
     } catch (error) {
       console.error("Stacks transaction failed:", error);
+      console.error("Error details:", {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        code: (error as any)?.code,
+        data: (error as any)?.data,
+      });
+      
+      // Check if it's an InvalidParams error
+      if ((error as any)?.code === -32602) {
+        console.error("InvalidParams error - this usually means:");
+        console.error("1. Wrong number of arguments");
+        console.error("2. Wrong argument types");
+        console.error("3. Invalid Clarity value format");
+        console.error("4. Contract or function doesn't exist");
+      }
+      
       throw error;
     }
   }
