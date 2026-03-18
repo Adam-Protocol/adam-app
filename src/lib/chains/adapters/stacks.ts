@@ -284,51 +284,23 @@ export class StacksAdapter implements ChainAdapter {
 
       console.log('Attempting stx_callContract with request API...');
 
-      try {
-        // Try the new request API first
-        const response = await request("stx_callContract", {
-          contract: params.contractAddress,
-          functionName: params.functionName,
-          functionArgs: clarityArgs,
-          network: network,
-          postConditionMode: 'allow', // Allow the transaction without post conditions
-        });
+      // Build post-conditions if provided
+      const postConditions = params.postConditions || [];
 
-        return {
-          hash: response.txid,
-          chainType: ChainType.STACKS,
-        };
-      } catch (requestError) {
-        console.warn("request API failed, trying legacy openContractCall...", requestError);
-        
-        // Fallback to legacy openContractCall API
-        const { openContractCall } = stacksConnect;
-        
-        // Split contract address into address and name
-        const [contractAddress, contractName] = params.contractAddress.split('.');
-        
-        await openContractCall({
-          contractAddress,
-          contractName,
-          functionName: params.functionName,
-          functionArgs: clarityArgs,
-          network: network,
-          postConditionMode: 'allow',
-          onFinish: (data: any) => {
-            console.log('Transaction submitted:', data);
-          },
-          onCancel: () => {
-            throw new Error('User canceled transaction');
-          },
-        });
+      // Use the new request API
+      const response = await request("stx_callContract", {
+        contract: params.contractAddress,
+        functionName: params.functionName,
+        functionArgs: clarityArgs,
+        network: network,
+        postConditions: postConditions.length > 0 ? postConditions : undefined,
+        postConditionMode: postConditions.length > 0 ? undefined : 'allow',
+      });
 
-        // openContractCall doesn't return the txid directly, so we return a placeholder
-        // The actual txid will be in the onFinish callback
-        return {
-          hash: 'pending',
-          chainType: ChainType.STACKS,
-        };
-      }
+      return {
+        hash: response.txid,
+        chainType: ChainType.STACKS,
+      };
     } catch (error) {
       console.error("Stacks transaction failed:", error);
       console.error("Error details:", {
@@ -423,16 +395,10 @@ export class StacksAdapter implements ChainAdapter {
     });
   }
 
-  /**
-   * All Stacks-specific encoding lives here:
-   * - amounts are plain strings (Clarity uint)
-   * - canonical token symbols → Stacks contract addresses (e.g. "ST1X.adam-token")
-   * - no ABI needed — Stacks uses dynamic dispatch
-   */
-  buildTransactionArgs(
+  async buildTransactionArgs(
     intent: TransactionIntent,
     contractAddress: string,
-  ): TransactionParams {
+  ): Promise<TransactionParams> {
     const tokenIn =
       MULTI_CHAIN_TOKENS[intent.tokenIn.toUpperCase()]?.addresses[
         ChainType.STACKS
@@ -444,20 +410,62 @@ export class StacksAdapter implements ChainAdapter {
     // Clarity uint — plain string representation
     const amountStr = intent.amountIn.toString();
 
+    console.log('Building Stacks transaction args:', {
+      action: intent.action,
+      tokenIn,
+      tokenOut,
+      amountIn: intent.amountIn.toString(),
+      userAddress: this.currentAccount?.address,
+    });
+
+    // Import Pc for post-conditions
+    const { Pc } = await import("@stacks/transactions");
+
     if (intent.action === "buy") {
+      // For buy: user sends tokenIn (USDCX), receives tokenOut (ADUSD)
+      // Extract token contract name from full address (e.g., "ST1X...ABC.usdcx" -> "usdcx")
+      const tokenName = tokenIn.split('.').pop() || "";
+      
+      console.log('Creating post-condition for buy:', {
+        principal: this.currentAccount?.address,
+        amount: intent.amountIn.toString(),
+        tokenContract: tokenIn,
+        tokenName,
+      });
+      
+      const postConditions = [
+        // User will send the input amount of USDCX
+        Pc.principal(this.currentAccount?.address || "")
+          .willSendLte(intent.amountIn)
+          .ft(tokenIn as `${string}.${string}`, tokenName),
+      ];
+
       return {
         contractAddress,
         functionName: "buy",
-        args: [tokenIn, amountStr, tokenOut, intent.commitment ?? ""],
+        args: [amountStr, tokenOut],
+        postConditions,
       };
     }
 
     if (intent.action === "swap") {
       const minAmountStr = (intent.minAmountOut ?? 0n).toString();
+      
+      // For swap: user burns tokenIn, receives tokenOut
+      const tokenInName = tokenIn.split('.').pop() || "";
+      
+      const postConditions = [
+        // User will send/burn the input amount
+        Pc.principal(this.currentAccount?.address || "")
+          .willSendLte(intent.amountIn)
+          .ft(tokenIn as `${string}.${string}`, tokenInName),
+      ];
+
       return {
         contractAddress,
         functionName: "swap",
-        args: [tokenIn, amountStr, tokenOut, minAmountStr, intent.commitment ?? ""],
+        args: [tokenIn, amountStr, tokenOut, minAmountStr],
+        postConditions,
       };
     }
 
