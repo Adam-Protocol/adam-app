@@ -66,7 +66,7 @@ export interface ChainAdapter {
   buildTransactionArgs(
     intent: TransactionIntent,
     contractAddress: string,
-  ): TransactionParams;
+  ): TransactionParams | Promise<TransactionParams>;
   /**
    * Whether this chain requires an explicit token approval step
    * before executing a transaction (e.g. ERC20 approve on Starknet).
@@ -79,6 +79,7 @@ export interface TransactionParams {
   functionName: string;
   args: any[];
   abi?: any[];
+  postConditions?: any[]; // Stacks post-conditions
 }
 
 export interface TokenInfo {

@@ -165,7 +165,7 @@ export function ChainProvider({ children }: { children: React.ReactNode }) {
     }
 
     // Step 2: Build chain-specific params and execute
-    const params = adapter.buildTransactionArgs(intent, contractAddress);
+    const params = await adapter.buildTransactionArgs(intent, contractAddress);
     return adapter.executeTransaction(params);
   };
 
