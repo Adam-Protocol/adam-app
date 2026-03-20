@@ -1,11 +1,23 @@
 import { useEffect, useState } from "react";
 import { useProvider } from "@starknet-react/core";
 import { Contract } from "starknet";
-import { CONTRACTS } from "@/lib/constants";
+import { useChain } from "@/contexts/ChainContext";
+import { ChainType } from "@/lib/chains/types";
+import { 
+  getTokenDecimals, 
+  MULTI_CHAIN_TOKENS, 
+  SWAP_CONTRACT_ADDRESSES 
+} from "@/lib/chains/config";
 import { toWei } from "@/lib/utils";
 import type { Abi } from "starknet";
+import { 
+  Cl,
+  cvToValue,
+  fetchCallReadOnlyFunction,
+} from "@stacks/transactions";
+import { STACKS_TESTNET, STACKS_MAINNET } from "@stacks/network";
 
-const SWAP_ABI = [
+const STARKNET_SWAP_ABI = [
   {
     type: "interface",
     name: "ISwap",
@@ -43,7 +55,8 @@ export function useBuyRate(
   tokenOut: "adusd" | "adngn" | "adkes" | "adghs" | "adzar",
   amountIn: string,
 ) {
-  const { provider } = useProvider();
+  const { currentChain } = useChain();
+  const { provider: starknetProvider } = useProvider();
   const [rate, setRate] = useState<bigint | null>(null);
   const [feeBps, setFeeBps] = useState<number>(0);
   const [outputAmount, setOutputAmount] = useState<string>("0");
@@ -51,91 +64,96 @@ export function useBuyRate(
 
   // Fetch rate and fee from contract
   useEffect(() => {
-    console.log("useBuyRate effect triggered");
-    console.log("Provider:", provider ? "ready" : "not ready");
-    console.log("Token out:", tokenOut);
-
-    if (!provider) {
-      console.log("useBuyRate: provider not ready");
-      return;
-    }
-
     const fetchRateAndFee = async () => {
       try {
         setIsLoading(true);
+        const swapAddress = SWAP_CONTRACT_ADDRESSES[currentChain];
+        if (!swapAddress) return;
 
-        console.log("Creating contract instance...");
-        console.log("Swap address:", CONTRACTS.ADAM_SWAP);
+        if (currentChain === ChainType.STARKNET && starknetProvider) {
+          const contract = new Contract({
+            abi: STARKNET_SWAP_ABI,
+            address: swapAddress,
+            providerOrAccount: starknetProvider,
+          });
 
-        const contract = new Contract({
-          abi: SWAP_ABI,
-          address: CONTRACTS.ADAM_SWAP,
-          providerOrAccount: provider,
-        });
+          const tokenOutAddress = MULTI_CHAIN_TOKENS[tokenOut.toUpperCase()].addresses[ChainType.STARKNET];
+          const usdcAddress = MULTI_CHAIN_TOKENS.USDC.addresses[ChainType.STARKNET];
 
-        const tokenOutAddress =
-          tokenOut === "adusd"
-            ? CONTRACTS.ADUSD
-            : tokenOut === "adngn"
-              ? CONTRACTS.ADNGN
-              : tokenOut === "adkes"
-                ? CONTRACTS.ADKES
-                : tokenOut === "adghs"
-                  ? CONTRACTS.ADGHS
-                  : CONTRACTS.ADZAR;
+          if (!tokenOutAddress || !usdcAddress) throw new Error("Missing Starknet token addresses");
 
-        console.log("Fetching rate from contract...");
-        console.log("USDC:", CONTRACTS.USDC);
-        console.log("Token Out:", tokenOutAddress);
-
-        // Fetch rate
-        console.log("Calling get_rate...");
-        const rateResult = await contract.call(
-          "get_rate",
-          [CONTRACTS.USDC, tokenOutAddress],
-          { blockIdentifier: "latest" },
-        );
-        console.log("Rate result:", rateResult);
-        console.log("Rate result type:", typeof rateResult);
-        console.log("Rate result keys:", Object.keys(rateResult || {}));
-
-        // Handle u256 response (low, high)
-        let rateValue: bigint;
-        if (typeof rateResult === "object" && rateResult !== null) {
-          if ("low" in rateResult && "high" in rateResult) {
-            console.log("Rate low:", rateResult.low);
-            console.log("Rate high:", rateResult.high);
-            rateValue =
-              BigInt(rateResult.low) + (BigInt(rateResult.high) << BigInt(128));
-          } else if (Array.isArray(rateResult)) {
-            console.log("Rate is array:", rateResult);
-            rateValue =
-              BigInt(rateResult[0]) +
-              (BigInt(rateResult[1] || 0) << BigInt(128));
+          const rateResult = await contract.call("get_rate", [usdcAddress, tokenOutAddress]);
+          
+          let rateValue: bigint;
+          if (typeof rateResult === "object" && rateResult !== null) {
+            if ("low" in rateResult && "high" in rateResult) {
+              rateValue = BigInt(rateResult.low) + (BigInt(rateResult.high) << BigInt(128));
+            } else if (Array.isArray(rateResult)) {
+              rateValue = BigInt(rateResult[0]) + (BigInt(rateResult[1] || 0) << BigInt(128));
+            } else {
+              rateValue = BigInt(rateResult.toString());
+            }
           } else {
-            console.log("Rate object, converting to string");
             rateValue = BigInt(rateResult.toString());
           }
-        } else {
-          console.log("Rate is primitive, converting to string");
-          rateValue = BigInt(rateResult.toString());
+          setRate(rateValue);
+
+          const feeResult = await contract.call("get_fee_bps", []);
+          setFeeBps(Number(feeResult.toString()));
+        } 
+        else if (currentChain === ChainType.STACKS) {
+          const [contractAddress, contractName] = swapAddress.split(".");
+          const network = process.env.NEXT_PUBLIC_STACKS_NETWORK === "mainnet" ? STACKS_MAINNET : STACKS_TESTNET;
+          
+          const tokenOutInfo = MULTI_CHAIN_TOKENS[tokenOut.toUpperCase()];
+          const usdcInfo = MULTI_CHAIN_TOKENS.USDC;
+          
+          const usdcFullAddr = usdcInfo.addresses[ChainType.STACKS];
+          const outFullAddr = tokenOutInfo.addresses[ChainType.STACKS];
+
+          if (!usdcFullAddr || !outFullAddr) throw new Error("Missing token addresses");
+
+          const usdcParts = usdcFullAddr.split(".");
+          const outParts = outFullAddr.split(".");
+
+          if (usdcParts.length < 2 || outParts.length < 2) throw new Error("Invalid token addresses");
+
+          const [usdcAddr, usdcName] = usdcParts;
+          const [outAddr, outName] = outParts;
+
+          // Fetch rate
+          const rateResponse = await fetchCallReadOnlyFunction({
+            contractAddress,
+            contractName,
+            functionName: "get-rate",
+            functionArgs: [
+              Cl.contractPrincipal(usdcAddr, usdcName),
+              Cl.contractPrincipal(outAddr, outName),
+            ],
+            network,
+            senderAddress: outAddr,
+          });
+          const rateValue = cvToValue(rateResponse);
+          if (rateValue && 'value' in rateValue) {
+            setRate(BigInt(rateValue.value));
+          }
+
+          // Fetch fee
+          const feeResponse = await fetchCallReadOnlyFunction({
+            contractAddress,
+            contractName,
+            functionName: "get-fee-bps",
+            functionArgs: [],
+            network,
+            senderAddress: outAddr,
+          });
+          const feeValue = cvToValue(feeResponse);
+          if (feeValue && 'value' in feeValue) {
+            setFeeBps(Number(feeValue.value));
+          }
         }
-
-        console.log("Rate value (bigint):", rateValue.toString());
-        setRate(rateValue);
-
-        // Fetch fee
-        console.log("Calling get_fee_bps...");
-        const feeResult = await contract.call("get_fee_bps", [], {
-          blockIdentifier: "latest",
-        });
-        console.log("Fee result:", feeResult);
-        const feeValue = Number(feeResult.toString());
-        console.log("Fee value:", feeValue);
-        setFeeBps(feeValue);
       } catch (error) {
         console.error("Error fetching rate:", error);
-        console.error("Error details:", JSON.stringify(error, null, 2));
         setRate(null);
         setFeeBps(0);
       } finally {
@@ -144,61 +162,42 @@ export function useBuyRate(
     };
 
     fetchRateAndFee();
-  }, [provider, tokenOut]);
+  }, [currentChain, starknetProvider, tokenOut]);
 
-  // Calculate output amount whenever inputs change
+  // Calculate output amount
   useEffect(() => {
-    console.log("Calculating output...");
-    console.log("Rate:", rate?.toString());
-    console.log("Amount in:", amountIn);
-    console.log("Fee BPS:", feeBps);
-
     if (!rate || !amountIn || parseFloat(amountIn) <= 0) {
-      console.log("Skipping calculation - missing inputs");
       setOutputAmount("0");
       return;
     }
 
     try {
-      // Convert USDC amount to base units (6 decimals) using toWei utility
-      // Handle decimal inputs properly
-      const amountNum = parseFloat(amountIn);
-      if (isNaN(amountNum) || amountNum <= 0) {
-        console.log("Invalid amount input");
-        setOutputAmount("0");
-        return;
-      }
-
-      // Use toWei to properly handle decimal conversion
       const amountInWei = toWei(amountIn, 6);
-      console.log("Amount in wei:", amountInWei.toString());
-
-      // Apply rate: (amount_in * rate) / RATE_PRECISION
       const grossOut = (amountInWei * rate) / RATE_PRECISION;
-      console.log("Gross out:", grossOut.toString());
-
-      // Apply fee: gross_out - (gross_out * fee_bps / 10000)
       const feeAmount = (grossOut * BigInt(feeBps)) / BigInt(10000);
       const netOut = grossOut - feeAmount;
-      console.log("Fee amount:", feeAmount.toString());
-      console.log("Net out:", netOut.toString());
 
-      // Convert to human-readable format (18 decimals for ADUSD/ADNGN)
-      const formatted = (Number(netOut) / 1e18).toFixed(3);
-      console.log("Formatted output:", formatted);
+      // Professional dynamic scaling
+      const decimalsOut = getTokenDecimals(tokenOut.toUpperCase(), currentChain);
+      const formatted = (Number(netOut) / Math.pow(10, decimalsOut)).toFixed(3);
       setOutputAmount(formatted);
     } catch (error) {
       console.error("Error calculating output:", error);
       setOutputAmount("0");
     }
-  }, [rate, amountIn, feeBps]);
+  }, [rate, amountIn, feeBps, currentChain, tokenOut]);
 
-  // Calculate effective rate (accounting for fees and decimal difference: USDC=6dp, token_out=18dp)
-  // rate is expressed as (token_out_units * 1e18) / usdc_units, so we scale by 1e6/1e18 = 1e-12
-  const effectiveRate =
-    rate && feeBps !== undefined
-      ? (Number(rate) / Number(RATE_PRECISION)) * (1 - feeBps / 10000) * 1e-12
-      : null;
+  // Calculate effective rate accounting for decimal differences
+  const effectiveRate = (() => {
+    if (!rate || feeBps === undefined) return null;
+    
+    const decimalsIn = 6;
+    const decimalsOut = getTokenDecimals(tokenOut.toUpperCase(), currentChain);
+    const decimalDifference = decimalsOut - decimalsIn;
+    const decimalScale = Math.pow(10, -decimalDifference);
+    
+    return (Number(rate) / Number(RATE_PRECISION)) * (1 - feeBps / 10000) * decimalScale;
+  })();
 
   return {
     rate: effectiveRate,
@@ -207,3 +206,5 @@ export function useBuyRate(
     isLoading,
   };
 }
+
+
