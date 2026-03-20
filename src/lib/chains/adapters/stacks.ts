@@ -281,26 +281,45 @@ export class StacksAdapter implements ChainAdapter {
 
       // Get network from environment
       const network = process.env.NEXT_PUBLIC_STACKS_NETWORK || 'testnet';
+      const isMainnet = network === 'mainnet';
 
-      console.log('Attempting stx_callContract with request API...');
+      console.log('Attempting contract call with openContractCall...');
 
       // Build post-conditions if provided
       const postConditions = params.postConditions || [];
 
-      // Use the new request API
-      const response = await request("stx_callContract", {
-        contract: params.contractAddress,
-        functionName: params.functionName,
-        functionArgs: clarityArgs,
-        network: network,
-        postConditions: postConditions.length > 0 ? postConditions : undefined,
-        postConditionMode: postConditions.length > 0 ? undefined : 'allow',
-      });
+      // Parse contract address (format: ST...ADDRESS.contract-name)
+      const [contractAddr, contractName] = params.contractAddress.split('.');
 
-      return {
-        hash: response.txid,
-        chainType: ChainType.STACKS,
-      };
+      if (!contractAddr || !contractName) {
+        throw new Error(`Invalid contract address format: ${params.contractAddress}. Expected format: ADDRESS.contract-name`);
+      }
+
+      // Use openContractCall which is more stable
+      const { openContractCall } = stacksConnect;
+
+      return new Promise<TransactionResult>((resolve, reject) => {
+        openContractCall({
+          contractAddress: contractAddr,
+          contractName: contractName,
+          functionName: params.functionName,
+          functionArgs: clarityArgs,
+          network: isMainnet ? 'mainnet' : 'testnet',
+          postConditions: postConditions.length > 0 ? postConditions : undefined,
+          postConditionMode: postConditions.length > 0 ? undefined : 'allow',
+          onFinish: (data: any) => {
+            console.log('Transaction broadcast:', data);
+            resolve({
+              hash: data.txId,
+              chainType: ChainType.STACKS,
+            });
+          },
+          onCancel: () => {
+            console.log('Transaction cancelled by user');
+            reject(new Error('Transaction cancelled by user'));
+          },
+        });
+      });
     } catch (error) {
       console.error("Stacks transaction failed:", error);
       console.error("Error details:", {
