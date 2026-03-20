@@ -24,7 +24,8 @@ const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
 // Helper function to get explorer URL based on chain and network
 function getExplorerUrl(txHash: string, chain: string = "STARKNET"): string {
-  if (chain?.toUpperCase() === "STACKS") {
+  const chainUpper = chain?.toUpperCase();
+  if (chainUpper === "STACKS" || chainUpper === "STACK") {
     const network = process.env.NEXT_PUBLIC_STACKS_NETWORK || "testnet";
     return `https://explorer.hiro.so/txid/${txHash}?chain=${network}`;
   }
