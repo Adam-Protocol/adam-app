@@ -2,7 +2,6 @@
 
 import { motion } from "framer-motion";
 import { useMultiChainWallet } from "@/hooks/useMultiChainWallet";
-import { useAccount } from "@starknet-react/core";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -24,9 +23,10 @@ import { useBanks } from "@/hooks/useBanks";
 import { useAccountVerification } from "@/hooks/useAccountVerification";
 import { useState, useEffect } from "react";
 import { BankSearchDropdown } from "@/components/ui/BankSearchDropdown";
-import { useSellToken } from "@/hooks/useSellToken";
+import { useMultiChainSell } from "@/hooks/useMultiChainSell";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { getTokenDecimals } from "@/lib/chains/config";
+import { ChainType } from "@/lib/chains/types";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
@@ -117,7 +117,7 @@ function SellPageContent({
   const { data: commitments = [], isLoading: loadingCommitments } =
     useUserCommitments(tokenType);
   const { getSecret } = useCommitment();
-  const { executeSell, isExecuting } = useSellToken();
+  const { executeSell, isExecuting } = useMultiChainSell();
 
   // Fetch all rates
   const { data: ratesData, isLoading: ratesLoading } = useQuery({
@@ -211,35 +211,45 @@ function SellPageContent({
       setTxSuccess(false);
 
       try {
-        // Find the most recent commitment for this token type
-        const availableCommitment = commitments.find(
-          (c) => c.token_out.toLowerCase() === data.token_in.toLowerCase(),
-        );
-
-        if (!availableCommitment) {
-          throw new Error(
-            `No available ${data.token_in.toUpperCase()} commitment found. Please buy tokens first.`,
-          );
-        }
-
-        // Retrieve secret from sessionStorage
-        const secret = getSecret(availableCommitment.commitment);
-        if (!secret) {
-          throw new Error(
-            "Secret not found. You may need to buy tokens again from this device.",
-          );
-        }
-
-        // Derive nullifier from secret
-        const nullifierKey = BigInt(Math.floor(Math.random() * 1e15));
-        const nullifier = hash.computePedersenHash(
-          "0x" + secret.toString(16),
-          "0x" + nullifierKey.toString(16),
-        );
-
         // Calculate amount in wei using chain-specific decimals
         const tokenDecimals = getTokenDecimals(data.token_in.toUpperCase(), currentChain);
         const amountInWei = toWei(data.amount, tokenDecimals);
+
+        let nullifier: string;
+        let commitment: string;
+
+        // For Stacks: no privacy features, use dummy values
+        if (currentChain === ChainType.STACKS) {
+          nullifier = "0x0";
+          commitment = "0x0";
+        } else {
+          // For Starknet: use commitment system
+          const availableCommitment = commitments.find(
+            (c) => c.token_out.toLowerCase() === data.token_in.toLowerCase(),
+          );
+
+          if (!availableCommitment) {
+            throw new Error(
+              `No available ${data.token_in.toUpperCase()} commitment found. Please buy tokens first.`,
+            );
+          }
+
+          // Retrieve secret from sessionStorage
+          const secret = getSecret(availableCommitment.commitment);
+          if (!secret) {
+            throw new Error(
+              "Secret not found. You may need to buy tokens again from this device.",
+            );
+          }
+
+          // Derive nullifier from secret
+          const nullifierKey = BigInt(Math.floor(Math.random() * 1e15));
+          nullifier = hash.computePedersenHash(
+            "0x" + secret.toString(16),
+            "0x" + nullifierKey.toString(16),
+          );
+          commitment = availableCommitment.commitment;
+        }
 
         // Step 1: Execute sell transaction from user's wallet
         toast.info("Executing sell transaction...", { duration: 1000 });
@@ -247,7 +257,7 @@ function SellPageContent({
           data.token_in,
           amountInWei,
           nullifier,
-          availableCommitment.commitment,
+          commitment,
         );
         console.log("Sell txHash", sellTxHash);
 
@@ -265,12 +275,13 @@ function SellPageContent({
             token_in: data.token_in,
             amount: amountInWei.toString(),
             nullifier,
-            commitment: availableCommitment.commitment,
+            commitment,
             currency: data.currency,
             bank_account: data.bank_account,
             bank_code: data.bank_code,
             transactionId,
-            tx_hash: sellTxHash, // Include the transaction hash
+            tx_hash: sellTxHash,
+            chain: currentChain.toUpperCase(),
           })
           .then((r) => ({ ...r.data, tx_hash: sellTxHash }));
       } catch (error: any) {
@@ -415,26 +426,26 @@ function SellPageContent({
                     TOKEN_TO_CURRENCY[tokenType] !== currency && (
                       <div className="mt-1 text-[10px] text-white/30 text-right">
                         Rate: 1 {tokenType.toUpperCase()} ≈{" "}
-                        {(fiatAmount / parseFloat(amount)).toFixed(4)}{" "}
+                        {(fiatAmount / parseFloat(amount)).toFixed(3)}{" "}
                         {currency}
                       </div>
                     )}
                 </motion.div>
               )}
 
-              {loadingCommitments && (
+              {currentChain !== ChainType.STACKS && loadingCommitments && (
                 <div className="text-xs text-white/40 mt-1 flex items-center gap-1">
                   <LoadingSpinner size="sm" />
                   Loading available balance...
                 </div>
               )}
-              {!loadingCommitments && commitments.length === 0 && (
+              {currentChain !== ChainType.STACKS && !loadingCommitments && commitments.length === 0 && (
                 <div className="text-xs text-yellow-400 mt-1 flex items-center gap-1">
                   <AlertCircle size={14} />
                   No {tokenType.toUpperCase()} purchased yet. Buy tokens first.
                 </div>
               )}
-              {!loadingCommitments && commitments.length > 0 && (
+              {currentChain !== ChainType.STACKS && !loadingCommitments && commitments.length > 0 && (
                 <div className="text-xs text-green-400 mt-1 flex items-center gap-1">
                   <CheckCircle2 size={14} /> {commitments.length} commitment(s)
                   available
@@ -536,22 +547,27 @@ function SellPageContent({
             </div>
           </div>
 
-          <div className="flex items-start gap-2 sm:gap-3 glass px-3 sm:px-4 py-3 rounded-xl border border-accent-orange/20 text-xs sm:text-sm">
-            <Sparkles
-              size={14}
-              className="text-accent-orange mt-0.5 shrink-0 sm:w-4 sm:h-4"
-            />
-            <p className="text-white/50">
-              Your bank details are processed once, never stored. Amount is
-              hidden on-chain via nullifier.
-            </p>
-          </div>
+          {currentChain !== ChainType.STACKS && (
+            <div className="flex items-start gap-2 sm:gap-3 glass px-3 sm:px-4 py-3 rounded-xl border border-accent-orange/20 text-xs sm:text-sm">
+              <Sparkles
+                size={14}
+                className="text-accent-orange mt-0.5 shrink-0 sm:w-4 sm:h-4"
+              />
+              <p className="text-white/50">
+                Your bank details are processed once, never stored. Amount is
+                hidden on-chain via nullifier.
+              </p>
+            </div>
+          )}
 
-          <CommitmentInfo
-            commitmentCount={commitments.length}
-            tokenType={tokenType}
-            isLoading={loadingCommitments}
-          />
+          {currentChain !== ChainType.STACKS && (
+            <CommitmentInfo
+              commitmentCount={commitments.length}
+              tokenType={tokenType}
+              isLoading={loadingCommitments}
+              currentChain={currentChain}
+            />
+          )}
 
           <button
             type="submit"
@@ -560,7 +576,7 @@ function SellPageContent({
               mutation.isPending ||
               isExecuting ||
               !verifiedAccountName ||
-              commitments.length === 0
+              (currentChain !== ChainType.STACKS && commitments.length === 0)
             }
             className="btn-neon w-full py-3.5 sm:py-4 rounded-xl sm:rounded-2xl bg-gradient-to-r from-accent-orange to-brand-500 text-white font-bold text-base sm:text-lg shadow-lg shadow-accent-orange/30 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-accent-orange/50 transition-all active:scale-98 flex items-center justify-center gap-2"
           >
@@ -576,7 +592,7 @@ function SellPageContent({
               </>
             ) : !isConnected ? (
               "Connect Wallet First"
-            ) : commitments.length === 0 ? (
+            ) : currentChain !== ChainType.STACKS && commitments.length === 0 ? (
               "No Commitments Available"
             ) : !verifiedAccountName ? (
               "Verify Account First"

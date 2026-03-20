@@ -17,12 +17,13 @@ import axios from "axios";
 import { hash } from "starknet";
 import { WalletGuard } from "@/components/auth/WalletGuard";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { generateTransactionId, toWei } from "@/lib/utils";
-import { useSwapToken } from "@/hooks/useSwapToken";
+import { useMultiChainSwap } from "@/hooks/useMultiChainSwap";
 import { useTokenApprove } from "@/hooks/useTokenApprove";
 import { CONTRACTS } from "@/lib/constants";
 import { getTokenDecimals } from "@/lib/chains/config";
+import { ChainType } from "@/lib/chains/types";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
@@ -78,8 +79,26 @@ function SwapPageContent({
   const tokenIn = watch("token_in");
   const tokenOut = watch("token_out");
   const amountIn = parseFloat(watch("amount_in") || "0");
-  const { executeSwap, isExecuting } = useSwapToken();
+  const { executeSwap, isExecuting } = useMultiChainSwap();
   const { approveToken, isApproving } = useTokenApprove();
+
+  // Auto-switch output token if it matches input token
+  useEffect(() => {
+    if (tokenIn === tokenOut) {
+      // Find a different token to switch to
+      const tokens: Array<"adusd" | "adngn" | "adkes" | "adghs" | "adzar"> = [
+        "adusd",
+        "adngn",
+        "adkes",
+        "adghs",
+        "adzar",
+      ];
+      const differentToken = tokens.find((t) => t !== tokenIn);
+      if (differentToken) {
+        setValue("token_out", differentToken);
+      }
+    }
+  }, [tokenIn, tokenOut, setValue]);
 
   // Fetch all rates
   const { data: ratesData, isLoading: ratesLoading } = useQuery({
@@ -92,23 +111,29 @@ function SwapPageContent({
   const calculateRate = () => {
     if (!ratesData || tokenIn === tokenOut) return 0;
 
-    // All rates are USD-based, so we need to convert
-    // Example: ADNGN to ADKES = (1/NGN_rate) * KES_rate
-    if (tokenIn === "adusd") {
-      // ADUSD to other currency
-      const currency = TOKEN_INFO[tokenOut].currency;
-      return ratesData[currency]?.rate || 0;
-    } else if (tokenOut === "adusd") {
-      // Other currency to ADUSD
-      const currency = TOKEN_INFO[tokenIn].currency;
-      const rate = ratesData[currency]?.rate || 0;
+    // All rates are USD-based (e.g., 1 USD = 1582 NGN)
+    // So ratesData[currency].rate tells us how many units of that currency = 1 USD
+    
+    const tokenInCurrency = TOKEN_INFO[tokenIn]?.currency;
+    const tokenOutCurrency = TOKEN_INFO[tokenOut]?.currency;
+    
+    if (!tokenInCurrency || !tokenOutCurrency) return 0;
+    
+    if (tokenInCurrency === "USD") {
+      // USD to other currency (e.g., ADUSD to ADNGN)
+      // 1 ADUSD = rate NGN
+      return ratesData[tokenOutCurrency]?.rate || 0;
+    } else if (tokenOutCurrency === "USD") {
+      // Other currency to USD (e.g., ADNGN to ADUSD)
+      // 1 ADNGN = 1/rate ADUSD
+      const rate = ratesData[tokenInCurrency]?.rate || 0;
       return rate > 0 ? 1 / rate : 0;
     } else {
       // Cross-currency swap (e.g., ADNGN to ADKES)
-      const inCurrency = TOKEN_INFO[tokenIn].currency;
-      const outCurrency = TOKEN_INFO[tokenOut].currency;
-      const inRate = ratesData[inCurrency]?.rate || 0;
-      const outRate = ratesData[outCurrency]?.rate || 0;
+      // Convert through USD: ADNGN -> ADUSD -> ADKES
+      const inRate = ratesData[tokenInCurrency]?.rate || 0; // NGN per USD
+      const outRate = ratesData[tokenOutCurrency]?.rate || 0; // KES per USD
+      // 1 ADNGN = (1/inRate) ADUSD = (1/inRate) * outRate ADKES
       return inRate > 0 ? outRate / inRate : 0;
     }
   };
@@ -175,6 +200,7 @@ function SwapPageContent({
           commitment,
           transactionId,
           tx_hash: txHash,
+          chain: currentChain.toUpperCase(),
         })
         .then((r) => ({
           ...r.data,
@@ -233,7 +259,7 @@ function SwapPageContent({
                 <div>
                   <p className="text-xs text-white/40">Exchange Rate</p>
                   <p className="font-bold text-white text-sm">
-                    1 {tokenIn.toUpperCase()} = {rate.toFixed(4)}{" "}
+                    1 {tokenIn.toUpperCase()} = {rate.toFixed(3)}{" "}
                     {tokenOut.toUpperCase()}
                   </p>
                 </div>
@@ -367,7 +393,7 @@ function SwapPageContent({
 
             {/* Output amount */}
             <div className="text-2xl font-black text-white/60 px-4 py-3 bg-white/3 rounded-xl border border-white/10">
-              {estimatedOut > 0 ? estimatedOut.toFixed(4) : "0.00"}
+              {estimatedOut > 0 ? estimatedOut.toFixed(3) : "0.00"}
             </div>
           </div>
 
@@ -378,16 +404,18 @@ function SwapPageContent({
             </div>
           )}
 
-          <div className="flex items-start gap-2 sm:gap-3 glass px-3 sm:px-4 py-3 rounded-xl border border-accent-cyan/20 text-xs sm:text-sm">
-            <Sparkles
-              size={14}
-              className="text-accent-cyan mt-0.5 shrink-0 sm:w-4 sm:h-4"
-            />
-            <p className="text-white/50">
-              Swap amounts are hidden on-chain. A new commitment is generated
-              client-side for the output token.
-            </p>
-          </div>
+          {currentChain !== ChainType.STACKS && (
+            <div className="flex items-start gap-2 sm:gap-3 glass px-3 sm:px-4 py-3 rounded-xl border border-accent-cyan/20 text-xs sm:text-sm">
+              <Sparkles
+                size={14}
+                className="text-accent-cyan mt-0.5 shrink-0 sm:w-4 sm:h-4"
+              />
+              <p className="text-white/50">
+                Swap amounts are hidden on-chain. A new commitment is generated
+                client-side for the output token.
+              </p>
+            </div>
+          )}
 
           <button
             type="submit"

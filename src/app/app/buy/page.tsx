@@ -20,6 +20,7 @@ import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { generateTransactionId, toWei } from "@/lib/utils";
 import { useMultiChainBuy } from "@/hooks/useMultiChainBuy";
 import { useBuyRate } from "@/hooks/useBuyRate";
+import { ChainType } from "@/lib/chains/types";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
@@ -29,7 +30,7 @@ type BuyForm = {
 };
 
 export default function BuyPage() {
-  const { address, isConnected } = useMultiChainWallet();
+  const { address, isConnected, currentChain } = useMultiChainWallet();
   const {
     register,
     handleSubmit,
@@ -45,6 +46,7 @@ export default function BuyPage() {
       <BuyPageContent
         address={address}
         isConnected={isConnected}
+        currentChain={currentChain}
         register={register}
         handleSubmit={handleSubmit}
         watch={watch}
@@ -70,6 +72,7 @@ const TOKEN_INFO: Record<
 function BuyPageContent({
   address,
   isConnected,
+  currentChain,
   register,
   handleSubmit,
   watch,
@@ -130,6 +133,7 @@ function BuyPageContent({
             commitment,
             transactionId,
             tx_hash: buyTxHash,
+            chain: currentChain.toUpperCase(),
           })
           .then((r) => ({
             ...r.data,
@@ -292,18 +296,20 @@ function BuyPageContent({
           </div>
 
           {/* Privacy info */}
-          <div className="flex items-start gap-2 sm:gap-3 glass px-3 sm:px-4 py-3 rounded-xl border border-brand-500/20 text-xs sm:text-sm">
-            <Sparkles
-              size={14}
-              className="text-brand-400 mt-0.5 shrink-0 sm:w-4 sm:h-4"
-            />
-            <p className="text-white/50">
-              Your commitment is generated{" "}
-              <strong className="text-white/70">client-side</strong>. No amount
-              is ever stored on-chain or sent to the server. Save your secret
-              key to spend later.
-            </p>
-          </div>
+          {currentChain !== ChainType.STACKS && (
+            <div className="flex items-start gap-2 sm:gap-3 glass px-3 sm:px-4 py-3 rounded-xl border border-brand-500/20 text-xs sm:text-sm">
+              <Sparkles
+                size={14}
+                className="text-brand-400 mt-0.5 shrink-0 sm:w-4 sm:h-4"
+              />
+              <p className="text-white/50">
+                Your commitment is generated{" "}
+                <strong className="text-white/70">client-side</strong>. No amount
+                is ever stored on-chain or sent to the server. Save your secret
+                key to spend later.
+              </p>
+            </div>
+          )}
 
           <button
             type="submit"
