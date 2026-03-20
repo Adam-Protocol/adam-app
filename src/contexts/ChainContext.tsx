@@ -52,9 +52,14 @@ import { SWAP_CONTRACT_ADDRESSES } from "@/lib/chains/config";
 const ChainContext = createContext<ChainContextValue | undefined>(undefined);
 
 export function ChainProvider({ children }: { children: React.ReactNode }) {
-  const [currentChain, setCurrentChain] = useState<ChainType>(
-    ChainType.STARKNET,
-  );
+  // Get default chain from environment variable, fallback to STARKNET
+  const getDefaultChain = (): ChainType => {
+    const defaultChain = process.env.NEXT_PUBLIC_DEFAULT_CHAIN?.toLowerCase();
+    if (defaultChain === 'stacks') return ChainType.STACKS;
+    return ChainType.STARKNET; // default to starknet
+  };
+
+  const [currentChain, setCurrentChain] = useState<ChainType>(getDefaultChain());
   
   // Stacks adapter state - completely isolated from Starknet
   const [stacksAdapter, setStacksAdapter] = useState<StacksAdapter | null>(null);
@@ -68,9 +73,9 @@ export function ChainProvider({ children }: { children: React.ReactNode }) {
     connectors: connectors as unknown as StarknetkitConnector[],
   });
 
-  // Initialize Stacks adapter once on mount
+  // Initialize Stacks adapter only when needed (when Stacks is selected or default)
   useEffect(() => {
-    if (typeof window !== "undefined" && !stacksAdapter) {
+    if (typeof window !== "undefined" && !stacksAdapter && currentChain === ChainType.STACKS) {
       const adapter = new StacksAdapter();
       
       // Subscribe to account changes to trigger re-renders
@@ -86,7 +91,7 @@ export function ChainProvider({ children }: { children: React.ReactNode }) {
       
       setStacksAdapter(adapter);
     }
-  }, [stacksAdapter]);
+  }, [stacksAdapter, currentChain]);
 
   // Create Starknet adapter - memoized to prevent unnecessary recreations
   const starknetAdapter = useMemo(() => {

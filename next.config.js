@@ -4,6 +4,7 @@ const nextConfig = {
   images: {
     domains: [],
   },
+  turbopack: {},
   webpack: (config, { isServer }) => {
     if (!isServer) {
       // Prevent issues with wallet provider injections during HMR

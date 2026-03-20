@@ -132,8 +132,10 @@ export function Navbar() {
 
           {/* Chain Selector & Wallet Button - Mobile & Desktop */}
           <div className="flex items-center gap-2 sm:gap-3">
-            {/* Chain Selector - Always visible */}
-            <ChainSelector />
+            {/* Chain Selector - Conditionally visible based on env */}
+            {process.env.NEXT_PUBLIC_SHOW_CHAIN_SELECTOR === 'true' && (
+              <ChainSelector />
+            )}
 
             {isConnected && shortAddress ? (
               <motion.button
