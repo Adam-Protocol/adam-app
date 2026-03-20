@@ -52,7 +52,7 @@ export class StacksAdapter implements ChainAdapter {
         const session: StacksSession = JSON.parse(sessionData);
         // Session expires after 24 hours
         const isExpired = Date.now() - session.timestamp > 24 * 60 * 60 * 1000;
-        
+
         if (!isExpired) {
           this.currentAccount = {
             address: session.address,
@@ -106,12 +106,12 @@ export class StacksAdapter implements ChainAdapter {
       // Dynamic import with proper typing
       const stacksConnectModule = await import("@stacks/connect");
       const stacksConnect: any = stacksConnectModule;
-      
+
       const connect = stacksConnect.connect;
       const isConnected = stacksConnect.isConnected;
       const request = stacksConnect.request;
       const getLocalStorage = stacksConnect.getLocalStorage;
-      
+
       // Check if already connected using the new API
       if (isConnected()) {
         try {
@@ -183,7 +183,7 @@ export class StacksAdapter implements ChainAdapter {
       const stacksConnectModule = await import("@stacks/connect");
       const stacksConnect: any = stacksConnectModule;
       const disconnect = stacksConnect.disconnect;
-      
+
       disconnect();
       this.currentAccount = null;
       this.clearSession();
@@ -195,25 +195,25 @@ export class StacksAdapter implements ChainAdapter {
 
   getAccount(): WalletAccount | null {
     if (typeof window === "undefined") return null;
-    
+
     // If not initialized yet, try to restore session
     if (!this.isInitialized) {
       this.restoreSession();
       this.isInitialized = true;
     }
-    
+
     return this.currentAccount;
   }
 
   isConnected(): boolean {
     if (typeof window === "undefined") return false;
-    
+
     // Ensure session is restored before checking connection
     if (!this.isInitialized) {
       this.restoreSession();
       this.isInitialized = true;
     }
-    
+
     return this.currentAccount !== null;
   }
 
@@ -232,7 +232,7 @@ export class StacksAdapter implements ChainAdapter {
       const stacksConnectModule = await import("@stacks/connect");
       const stacksConnect: any = stacksConnectModule;
       const request = stacksConnect.request;
-      
+
       const { Cl } = await import("@stacks/transactions");
 
       console.log('Raw transaction params:', {
@@ -245,7 +245,7 @@ export class StacksAdapter implements ChainAdapter {
       // Convert args to Clarity values based on type
       const clarityArgs = params.args.map((arg: any, index: number) => {
         console.log(`Processing arg ${index}:`, { value: arg, type: typeof arg });
-        
+
         if (typeof arg === "string") {
           // Check if it's a principal (standard or contract address)
           if (arg.startsWith("ST") || arg.startsWith("SP")) {
@@ -309,7 +309,7 @@ export class StacksAdapter implements ChainAdapter {
         code: (error as any)?.code,
         data: (error as any)?.data,
       });
-      
+
       // Check if it's an InvalidParams error
       if ((error as any)?.code === -32602) {
         console.error("InvalidParams error - this usually means:");
@@ -318,7 +318,7 @@ export class StacksAdapter implements ChainAdapter {
         console.error("3. Invalid Clarity value format");
         console.error("4. Contract or function doesn't exist");
       }
-      
+
       throw error;
     }
   }
@@ -327,13 +327,13 @@ export class StacksAdapter implements ChainAdapter {
     if (!tokenAddress) {
       // Get native STX balance from API
       try {
-        const network = process.env.NEXT_PUBLIC_STACKS_NETWORK === "mainnet" 
-          ? "mainnet" 
+        const network = process.env.NEXT_PUBLIC_STACKS_NETWORK === "mainnet"
+          ? "mainnet"
           : "testnet";
         const apiUrl = network === "mainnet"
           ? "https://api.hiro.so"
           : "https://api.testnet.hiro.so";
-          
+
         const response = await fetch(
           `${apiUrl}/extended/v1/address/${address}/balances`,
         );
@@ -350,11 +350,11 @@ export class StacksAdapter implements ChainAdapter {
       const stacksConnectModule = await import("@stacks/connect");
       const stacksConnect: any = stacksConnectModule;
       const request = stacksConnect.request;
-      
+
       const { Cl, cvToJSON } = await import("@stacks/transactions");
-      
+
       const [contractAddress, contractName] = tokenAddress.split(".");
-      
+
       const result = await request("stx_callReadOnly", {
         contractAddress,
         contractName,
@@ -401,14 +401,12 @@ export class StacksAdapter implements ChainAdapter {
   ): Promise<TransactionParams> {
     const tokenIn =
       MULTI_CHAIN_TOKENS[intent.tokenIn.toUpperCase()]?.addresses[
-        ChainType.STACKS
+      ChainType.STACKS
       ] ?? "";
     const tokenOut =
       MULTI_CHAIN_TOKENS[intent.tokenOut.toUpperCase()]?.addresses[
-        ChainType.STACKS
+      ChainType.STACKS
       ] ?? "";
-    // Clarity uint — plain string representation
-    const amountStr = intent.amountIn.toString();
 
     console.log('Building Stacks transaction args:', {
       action: intent.action,
@@ -423,48 +421,64 @@ export class StacksAdapter implements ChainAdapter {
 
     if (intent.action === "buy") {
       // For buy: user sends tokenIn (USDCX), receives tokenOut (ADUSD)
-      // Extract token contract name from full address (e.g., "ST1X...ABC.usdcx" -> "usdcx")
-      const tokenName = tokenIn.split('.').pop() || "";
-      
+      // Use the actual fungible token identifier "usdcx" (not the contract name "usdcx-v3")
+      // The ft identifier is defined in the contract as (define-fungible-token usdcx ...)
+      const tokenIdentifier = "usdcx";
+
       console.log('Creating post-condition for buy:', {
         principal: this.currentAccount?.address,
         amount: intent.amountIn.toString(),
         tokenContract: tokenIn,
-        tokenName,
+        tokenIdentifier,
       });
-      
+
       const postConditions = [
-        // User will send the input amount of USDCX
+        // User will send exactly the input amount of USDCX
         Pc.principal(this.currentAccount?.address || "")
-          .willSendLte(intent.amountIn)
-          .ft(tokenIn as `${string}.${string}`, tokenName),
+          .willSendEq(intent.amountIn)
+          .ft(tokenIn as `${string}.${string}`, tokenIdentifier),
       ];
 
       return {
         contractAddress,
         functionName: "buy",
-        args: [amountStr, tokenOut],
+        // Pass amountIn as bigint so it converts to Cl.uint correctly
+        args: [intent.amountIn, tokenOut],
         postConditions,
       };
     }
 
     if (intent.action === "swap") {
-      const minAmountStr = (intent.minAmountOut ?? 0n).toString();
-      
+      const minAmount = intent.minAmountOut ?? 0n;
+
       // For swap: user burns tokenIn, receives tokenOut
-      const tokenInName = tokenIn.split('.').pop() || "";
-      
+      // Map token addresses to their actual fungible token identifiers
+      // All Adam tokens use their base name (e.g., "adam-token-adusd" not "adam-token-adusd-v2")
+      const getTokenIdentifier = (tokenAddress: string): string => {
+        if (tokenAddress.includes('usdcx')) return 'usdcx';
+        if (tokenAddress.includes('adusd')) return 'adam-token-adusd';
+        if (tokenAddress.includes('adngn')) return 'adam-token-adngn';
+        if (tokenAddress.includes('adkes')) return 'adam-token-adkes';
+        if (tokenAddress.includes('adghs')) return 'adam-token-adghs';
+        if (tokenAddress.includes('adzar')) return 'adam-token-adzar';
+        // Fallback to extracting from contract name
+        return tokenAddress.split('.').pop() || "";
+      };
+
+      const tokenInIdentifier = getTokenIdentifier(tokenIn);
+
       const postConditions = [
         // User will send/burn the input amount
         Pc.principal(this.currentAccount?.address || "")
-          .willSendLte(intent.amountIn)
-          .ft(tokenIn as `${string}.${string}`, tokenInName),
+          .willSendEq(intent.amountIn)
+          .ft(tokenIn as `${string}.${string}`, tokenInIdentifier),
       ];
 
       return {
         contractAddress,
         functionName: "swap",
-        args: [tokenIn, amountStr, tokenOut, minAmountStr],
+        // Pass bigints so they convert to Cl.uint correctly
+        args: [tokenIn, intent.amountIn, tokenOut, minAmount],
         postConditions,
       };
     }

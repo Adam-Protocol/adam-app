@@ -22,6 +22,16 @@ import { WalletGuard } from "@/components/auth/WalletGuard";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
+// Helper function to get explorer URL based on chain and network
+function getExplorerUrl(txHash: string, chain: string = "STARKNET"): string {
+  if (chain === "STACKS") {
+    const network = process.env.NEXT_PUBLIC_STACKS_NETWORK || "testnet";
+    return `https://explorer.hiro.so/txid/${txHash}?chain=${network}`;
+  }
+  // Default to Starknet Sepolia
+  return `https://sepolia.voyager.online/tx/${txHash}`;
+}
+
 const STATUS_CONFIG: Record<string, { color: string; bg: string }> = {
   completed: { color: "text-accent-green", bg: "bg-accent-green/15" },
   failed: { color: "text-accent-red", bg: "bg-accent-red/15" },
@@ -84,7 +94,7 @@ function TxRowDesktop({ tx, onClick }: { tx: any; onClick: () => void }) {
       <td className="px-5 py-4">
         {tx.tx_hash && (
           <a
-            href={`https://sepolia.voyager.online/tx/${tx.tx_hash}`}
+            href={getExplorerUrl(tx.tx_hash, tx.chain)}
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
@@ -145,7 +155,7 @@ function TxCardMobile({ tx, onClick }: { tx: any; onClick: () => void }) {
         </span>
         {tx.tx_hash && (
           <a
-            href={`https://sepolia.voyager.online/tx/${tx.tx_hash}`}
+            href={getExplorerUrl(tx.tx_hash, tx.chain)}
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
