@@ -24,7 +24,7 @@ const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
 // Helper function to get explorer URL based on chain and network
 function getExplorerUrl(txHash: string, chain: string = "STARKNET"): string {
-  if (chain === "STACKS") {
+  if (chain?.toUpperCase() === "STACKS") {
     const network = process.env.NEXT_PUBLIC_STACKS_NETWORK || "testnet";
     return `https://explorer.hiro.so/txid/${txHash}?chain=${network}`;
   }
@@ -225,7 +225,7 @@ function TxDrawer({ tx, onClose }: { tx: any; onClose: () => void }) {
               ))}
               {tx.tx_hash && (
                 <a
-                  href={`https://sepolia.voyager.online/tx/${tx.tx_hash}`}
+                  href={getExplorerUrl(tx.tx_hash, tx.chain)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 text-brand-400 hover:text-brand-300 text-sm mt-4 active:scale-98 transition-transform"
