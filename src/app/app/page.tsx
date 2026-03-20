@@ -25,6 +25,15 @@ import { useBalances } from "@/hooks/useBalances";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
+// Helper function to get explorer URL based on chain and network
+function getExplorerUrl(txHash: string, chain: string = "STARKNET"): string {
+  if (chain?.toUpperCase() === "STACKS") {
+    const network = process.env.NEXT_PUBLIC_STACKS_NETWORK || "testnet";
+    return `https://explorer.hiro.so/txid/${txHash}?chain=${network}`;
+  }
+  return `https://sepolia.voyager.online/tx/${txHash}`;
+}
+
 const STATUS_CONFIG: Record<string, { color: string; bg: string }> = {
   completed: { color: "text-accent-green", bg: "bg-accent-green/15" },
   failed: { color: "text-accent-red", bg: "bg-accent-red/15" },
@@ -111,7 +120,7 @@ function TxCard({ tx }: { tx: any }) {
         </span>
         {tx.tx_hash && (
           <a
-            href={`https://sepolia.voyager.online/tx/${tx.tx_hash}`}
+            href={getExplorerUrl(tx.tx_hash, tx.chain)}
             target="_blank"
             rel="noopener noreferrer"
             className="text-brand-400 hover:text-brand-300 transition-colors flex items-center gap-1"
