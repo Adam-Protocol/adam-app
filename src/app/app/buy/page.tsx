@@ -304,9 +304,9 @@ function BuyPageContent({
               />
               <p className="text-white/50">
                 Your commitment is generated{" "}
-                <strong className="text-white/70">client-side</strong>. No amount
-                is ever stored on-chain or sent to the server. Save your secret
-                key to spend later.
+                <strong className="text-white/70">client-side</strong>. No
+                amount is ever stored on-chain or sent to the server. Save your
+                secret key to spend later.
               </p>
             </div>
           )}
@@ -319,9 +319,7 @@ function BuyPageContent({
             {mutation.isPending || isExecuting ? (
               <>
                 <LoadingSpinner size="sm" className="text-white" />
-                <span>
-                  {isExecuting ? "Executing..." : "Processing..."}
-                </span>
+                <span>{isExecuting ? "Executing..." : "Processing..."}</span>
               </>
             ) : txSuccess ? (
               <>

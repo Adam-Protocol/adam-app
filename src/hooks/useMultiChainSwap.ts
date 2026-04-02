@@ -98,6 +98,9 @@ export function useMultiChainSwap() {
             throw new Error("Token address not configured for Starknet");
         }
 
+        // Approve token spending before swap
+        await adapter.approveToken(tokenInAddress, swapContractAddress, amountIn);
+
         const amountInU256 = uint256.bnToUint256(amountIn);
         const minAmountOutU256 = uint256.bnToUint256(minAmountOut);
 

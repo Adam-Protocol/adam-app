@@ -133,34 +133,20 @@ function SellPageContent({
 
     const tokenCurrency = TOKEN_TO_CURRENCY[tokenType];
 
-    // If selling the same currency (e.g., ADNGN -> NGN), it's 1:1
-    if (tokenCurrency === currency) {
-      return parseFloat(amount);
+    // Get rates (relative to USD)
+    // Backend now provides USD: { rate: 1.0 } for consistency
+    const fromRate = ratesData[tokenCurrency]?.rate;
+    const toRate = ratesData[currency]?.rate;
+
+    if (fromRate === undefined || toRate === undefined) {
+      console.warn(`Missing rate for ${fromRate === undefined ? tokenCurrency : currency}`);
+      return 0;
     }
 
-    // If selling ADUSD to another currency
-    if (tokenType === "adusd") {
-      const rate = ratesData[currency]?.rate || 0;
-      return parseFloat(amount) * rate;
-    }
-
-    // If selling another currency to USD
-    if (currency === "USD") {
-      const rate = ratesData[tokenCurrency]?.rate || 0;
-      return rate > 0 ? parseFloat(amount) / rate : 0;
-    }
-
-    // Cross-currency conversion (e.g., ADNGN -> KES)
-    const fromRate = ratesData[tokenCurrency]?.rate || 0;
-    const toRate = ratesData[currency]?.rate || 0;
-
-    if (fromRate > 0) {
-      // Convert to USD first, then to target currency
-      const usdAmount = parseFloat(amount) / fromRate;
-      return usdAmount * toRate;
-    }
-
-    return 0;
+    // Unified formula: (amount / fromRate) * toRate
+    // 1. amount / fromRate = value in USD
+    // 2. usdValue * toRate = value in target currency
+    return (parseFloat(amount) / fromRate) * toRate;
   };
 
   const fiatAmount = calculateFiatAmount();
@@ -218,10 +204,10 @@ function SellPageContent({
         let nullifier: string;
         let commitment: string;
 
-        // For Stacks: no privacy features, use dummy values
+        // For Stacks: no privacy features, omit nullifier/commitment
         if (currentChain === ChainType.STACKS) {
-          nullifier = "0x0";
-          commitment = "0x0";
+          nullifier = undefined as any;
+          commitment = undefined as any;
         } else {
           // For Starknet: use commitment system
           const availableCommitment = commitments.find(

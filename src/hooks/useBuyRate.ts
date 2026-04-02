@@ -3,14 +3,14 @@ import { useProvider } from "@starknet-react/core";
 import { Contract } from "starknet";
 import { useChain } from "@/contexts/ChainContext";
 import { ChainType } from "@/lib/chains/types";
-import { 
-  getTokenDecimals, 
-  MULTI_CHAIN_TOKENS, 
-  SWAP_CONTRACT_ADDRESSES 
+import {
+  getTokenDecimals,
+  MULTI_CHAIN_TOKENS,
+  SWAP_CONTRACT_ADDRESSES
 } from "@/lib/chains/config";
 import { toWei } from "@/lib/utils";
 import type { Abi } from "starknet";
-import { 
+import {
   Cl,
   cvToValue,
   fetchCallReadOnlyFunction,
@@ -49,7 +49,7 @@ const STARKNET_SWAP_ABI = [
   },
 ] as const satisfies Abi;
 
-const RATE_PRECISION = BigInt("1000000000000000000"); // 1e18
+const RATE_PRECISION = BigInt("1000000"); // 1e6 (matches contract)
 
 export function useBuyRate(
   tokenOut: "adusd" | "adngn" | "adkes" | "adghs" | "adzar",
@@ -83,7 +83,7 @@ export function useBuyRate(
           if (!tokenOutAddress || !usdcAddress) throw new Error("Missing Starknet token addresses");
 
           const rateResult = await contract.call("get_rate", [usdcAddress, tokenOutAddress]);
-          
+
           let rateValue: bigint;
           if (typeof rateResult === "object" && rateResult !== null) {
             if ("low" in rateResult && "high" in rateResult) {
@@ -100,14 +100,14 @@ export function useBuyRate(
 
           const feeResult = await contract.call("get_fee_bps", []);
           setFeeBps(Number(feeResult.toString()));
-        } 
+        }
         else if (currentChain === ChainType.STACKS) {
           const [contractAddress, contractName] = swapAddress.split(".");
           const network = process.env.NEXT_PUBLIC_STACKS_NETWORK === "mainnet" ? STACKS_MAINNET : STACKS_TESTNET;
-          
+
           const tokenOutInfo = MULTI_CHAIN_TOKENS[tokenOut.toUpperCase()];
           const usdcInfo = MULTI_CHAIN_TOKENS.USDC;
-          
+
           const usdcFullAddr = usdcInfo.addresses[ChainType.STACKS];
           const outFullAddr = tokenOutInfo.addresses[ChainType.STACKS];
 
@@ -177,9 +177,16 @@ export function useBuyRate(
       const feeAmount = (grossOut * BigInt(feeBps)) / BigInt(10000);
       const netOut = grossOut - feeAmount;
 
-      // Professional dynamic scaling
+      // Convert to decimal with proper rounding
       const decimalsOut = getTokenDecimals(tokenOut.toUpperCase(), currentChain);
-      const formatted = (Number(netOut) / Math.pow(10, decimalsOut)).toFixed(3);
+      const divisor = BigInt(10 ** decimalsOut);
+      const whole = netOut / divisor;
+      const remainder = netOut % divisor;
+
+      // Format with proper decimal places (2 decimals for display)
+      const remainderStr = remainder.toString().padStart(decimalsOut, "0");
+      const fullNumber = `${whole}.${remainderStr}`;
+      const formatted = parseFloat(fullNumber).toFixed(2);
       setOutputAmount(formatted);
     } catch (error) {
       console.error("Error calculating output:", error);
@@ -190,12 +197,12 @@ export function useBuyRate(
   // Calculate effective rate accounting for decimal differences
   const effectiveRate = (() => {
     if (!rate || feeBps === undefined) return null;
-    
+
     const decimalsIn = 6;
     const decimalsOut = getTokenDecimals(tokenOut.toUpperCase(), currentChain);
     const decimalDifference = decimalsOut - decimalsIn;
     const decimalScale = Math.pow(10, -decimalDifference);
-    
+
     return (Number(rate) / Number(RATE_PRECISION)) * (1 - feeBps / 10000) * decimalScale;
   })();
 

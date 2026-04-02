@@ -20,8 +20,6 @@ import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { useState, useEffect } from "react";
 import { generateTransactionId, toWei } from "@/lib/utils";
 import { useMultiChainSwap } from "@/hooks/useMultiChainSwap";
-import { useTokenApprove } from "@/hooks/useTokenApprove";
-import { CONTRACTS } from "@/lib/constants";
 import { getTokenDecimals } from "@/lib/chains/config";
 import { ChainType } from "@/lib/chains/types";
 
@@ -80,7 +78,6 @@ function SwapPageContent({
   const tokenOut = watch("token_out");
   const amountIn = parseFloat(watch("amount_in") || "0");
   const { executeSwap, isExecuting } = useMultiChainSwap();
-  const { approveToken, isApproving } = useTokenApprove();
 
   // Auto-switch output token if it matches input token
   useEffect(() => {
@@ -163,24 +160,7 @@ function SwapPageContent({
 
       sessionStorage.setItem(`adam_secret_${commitment}`, secret.toString());
 
-      // Step 1: Check and approve token if needed
-      const tokenInAddress =
-        data.token_in === "adusd"
-          ? CONTRACTS.ADUSD
-          : data.token_in === "adngn"
-            ? CONTRACTS.ADNGN
-            : data.token_in === "adkes"
-              ? CONTRACTS.ADKES
-              : data.token_in === "adghs"
-                ? CONTRACTS.ADGHS
-                : CONTRACTS.ADZAR;
-      try {
-        await approveToken(tokenInAddress, CONTRACTS.ADAM_SWAP, amountWei);
-      } catch (err: any) {
-        throw new Error(`Approval failed: ${err.message}`, { cause: err });
-      }
-
-      // Step 2: Execute swap on-chain (frontend signing)
+      // Execute swap on-chain (approval is handled internally by the multichain adapter)
       const txHash = await executeSwap(
         data.token_in,
         amountWei,
@@ -189,7 +169,7 @@ function SwapPageContent({
         commitment,
       );
 
-      // Step 3: Record transaction in backend
+      // Record transaction in backend
       return axios
         .post(`${API}/swap`, {
           wallet: address,
@@ -422,25 +402,18 @@ function SwapPageContent({
             disabled={
               !isConnected ||
               mutation.isPending ||
+              isExecuting ||
               !watch("amount_in") ||
               tokenIn === tokenOut
             }
             className="btn-neon w-full py-3.5 sm:py-4 rounded-xl sm:rounded-2xl bg-gradient-to-r from-accent-cyan to-accent-orange text-white font-bold text-base sm:text-lg shadow-lg shadow-accent-cyan/30 disabled:opacity-50 transition-all active:scale-98 flex items-center justify-center gap-2"
           >
-            {isApproving ? (
+            {isExecuting || mutation.isPending ? (
               <>
                 <LoadingSpinner size="sm" className="text-white" />
-                <span>Approving...</span>
-              </>
-            ) : isExecuting ? (
-              <>
-                <LoadingSpinner size="sm" className="text-white" />
-                <span>Swapping...</span>
-              </>
-            ) : mutation.isPending ? (
-              <>
-                <LoadingSpinner size="sm" className="text-white" />
-                <span>Recording...</span>
+                <span>
+                  {isExecuting ? "Swapping..." : "Recording..."}
+                </span>
               </>
             ) : txSuccess ? (
               <>
