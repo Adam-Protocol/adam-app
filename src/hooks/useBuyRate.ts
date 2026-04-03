@@ -49,7 +49,7 @@ const STARKNET_SWAP_ABI = [
   },
 ] as const satisfies Abi;
 
-const RATE_PRECISION = BigInt("1000000"); // 1e6 (matches contract)
+const RATE_PRECISION = BigInt("1000000000000000000"); // 1e18 (matches contract)
 
 export function useBuyRate(
   tokenOut: "adusd" | "adngn" | "adkes" | "adghs" | "adzar",
@@ -173,20 +173,33 @@ export function useBuyRate(
 
     try {
       const amountInWei = toWei(amountIn, 6);
+      const decimalsIn = 6; // USDC
+      const decimalsOut = getTokenDecimals(tokenOut.toUpperCase(), currentChain);
+      
       const grossOut = (amountInWei * rate) / RATE_PRECISION;
-      const feeAmount = (grossOut * BigInt(feeBps)) / BigInt(10000);
-      const netOut = grossOut - feeAmount;
+      
+      // Scaling for different decimals (e.g. USDC 6 -> ADNGN 18)
+      const scaledGrossOut = decimalsOut > decimalsIn 
+        ? grossOut * BigInt(10 ** (decimalsOut - decimalsIn))
+        : decimalsOut < decimalsIn
+          ? grossOut / BigInt(10 ** (decimalsIn - decimalsOut))
+          : grossOut;
+
+      const feeAmount = (scaledGrossOut * BigInt(feeBps)) / BigInt(10000);
+      const netOut = scaledGrossOut - feeAmount;
 
       // Convert to decimal with proper rounding
-      const decimalsOut = getTokenDecimals(tokenOut.toUpperCase(), currentChain);
       const divisor = BigInt(10 ** decimalsOut);
       const whole = netOut / divisor;
       const remainder = netOut % divisor;
 
-      // Format with proper decimal places (2 decimals for display)
+      // Format with proper decimal places
       const remainderStr = remainder.toString().padStart(decimalsOut, "0");
       const fullNumber = `${whole}.${remainderStr}`;
-      const formatted = parseFloat(fullNumber).toFixed(2);
+      
+      // Use 2-4 decimals for display
+      const displayDecimals = tokenOut.toLowerCase() === "adngn" ? 2 : 4;
+      const formatted = parseFloat(fullNumber).toFixed(displayDecimals);
       setOutputAmount(formatted);
     } catch (error) {
       console.error("Error calculating output:", error);
@@ -200,10 +213,11 @@ export function useBuyRate(
 
     const decimalsIn = 6;
     const decimalsOut = getTokenDecimals(tokenOut.toUpperCase(), currentChain);
-    const decimalDifference = decimalsOut - decimalsIn;
-    const decimalScale = Math.pow(10, -decimalDifference);
-
-    return (Number(rate) / Number(RATE_PRECISION)) * (1 - feeBps / 10000) * decimalScale;
+    
+    // Effective rate should be what you get for ONE UNIT of token_in
+    // Since rate is based on RATE_PRECISION (1e18), and we want human rate:
+    const humanRate = (Number(rate) / Number(RATE_PRECISION)) * (1 - feeBps / 10000);
+    return humanRate;
   })();
 
   return {

@@ -271,7 +271,11 @@ function BuyPageContent({
                     <LoadingSpinner size="sm" />
                   ) : (
                     <span className="text-white font-bold text-lg">
-                      {Number(outputAmount).toFixed(3)} {tokenOut.toUpperCase()}
+                      {Number(outputAmount).toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}{" "}
+                      {tokenOut.toUpperCase()}
                     </span>
                   )}
                 </div>
@@ -279,7 +283,11 @@ function BuyPageContent({
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-white/40">Exchange rate</span>
                     <span className="text-white/60">
-                      1 USDC = {rate.toFixed(3)} {tokenOut.toUpperCase()}
+                      1 USDC = {rate.toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 4,
+                      })}{" "}
+                      {tokenOut.toUpperCase()}
                     </span>
                   </div>
                 )}
