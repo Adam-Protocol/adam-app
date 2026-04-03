@@ -16,6 +16,7 @@ export const metadata: Metadata = {
     description: "Privacy-first stablecoin offramp for Africa and beyond.",
     type: "website",
   },
+  manifest: "/manifest.json",
 };
 
 export default function RootLayout({
