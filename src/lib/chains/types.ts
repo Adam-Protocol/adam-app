@@ -1,8 +1,8 @@
 // Chain types and interfaces for multi-chain support
 
 export enum ChainType {
-  STARKNET = "starknet",
-  STACKS = "stacks",
+  STARKNET = "STARKNET",
+  STACKS = "STACKS",
 }
 
 export interface ChainConfig {
