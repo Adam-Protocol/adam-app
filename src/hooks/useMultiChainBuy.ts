@@ -88,8 +88,20 @@ export function useMultiChainBuy() {
       throw new Error("Token address not configured for Starknet");
     }
 
+    console.log("Buy parameters:", {
+      amountIn: amountIn.toString(),
+      tokenOut,
+      usdcAddress,
+      tokenOutAddress,
+      swapContractAddress,
+    });
+
     const amountU256 = uint256.bnToUint256(amountIn);
 
+    // First approve
+    await adapter.approveToken(usdcAddress, swapContractAddress, amountIn);
+
+    // Then execute buy
     const result = await adapter.executeTransaction({
       contractAddress: swapContractAddress,
       functionName: "buy",
