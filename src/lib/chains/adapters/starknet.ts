@@ -98,7 +98,7 @@ export class StarknetAdapter implements ChainAdapter {
     const tokenContract = new Contract({
       abi: [
         {
-          name: "balanceOf",
+          name: "balance_of",
           type: "function",
           inputs: [
             {
@@ -114,7 +114,7 @@ export class StarknetAdapter implements ChainAdapter {
       providerOrAccount: this.account,
     });
 
-    const balance = await tokenContract.balanceOf(address);
+    const balance = await tokenContract.balance_of(address);
     return uint256.uint256ToBN(balance);
   }
 
@@ -169,11 +169,11 @@ export class StarknetAdapter implements ChainAdapter {
   ): TransactionParams {
     const tokenIn =
       MULTI_CHAIN_TOKENS[intent.tokenIn.toUpperCase()]?.addresses[
-        ChainType.STARKNET
+      ChainType.STARKNET
       ] ?? "";
     const tokenOut =
       MULTI_CHAIN_TOKENS[intent.tokenOut.toUpperCase()]?.addresses[
-        ChainType.STARKNET
+      ChainType.STARKNET
       ] ?? "";
     const amountU256 = uint256.bnToUint256(intent.amountIn);
 
