@@ -23,6 +23,8 @@ const STARKNET_SWAP_ABI = [
                 type: "core::starknet::contract_address::ContractAddress",
             },
             { name: "min_amount_out", type: "core::integer::u256" },
+            { name: "nullifier", type: "core::felt252" },
+            { name: "proof", type: "core::array::Array::<core::felt252>" },
             { name: "commitment", type: "core::felt252" },
         ],
         outputs: [],
@@ -43,6 +45,8 @@ export function useMultiChainSwap() {
         amountIn: bigint,
         tokenOut: "adusd" | "adngn" | "adkes" | "adghs" | "adzar",
         minAmountOut: bigint,
+        nullifier: string,
+        proof: string[],
         commitment: string,
     ): Promise<string> => {
         if (!adapter || !account) {
@@ -59,6 +63,8 @@ export function useMultiChainSwap() {
                     amountIn,
                     tokenOut,
                     minAmountOut,
+                    nullifier,
+                    proof,
                     commitment,
                     swapContractAddress,
                 );
@@ -84,6 +90,8 @@ export function useMultiChainSwap() {
         amountIn: bigint,
         tokenOut: "adusd" | "adngn" | "adkes" | "adghs" | "adzar",
         minAmountOut: bigint,
+        nullifier: string,
+        proof: string[],
         commitment: string,
         swapContractAddress: string,
     ): Promise<string> => {
@@ -112,6 +120,8 @@ export function useMultiChainSwap() {
                 amountInU256,
                 tokenOutAddress,
                 minAmountOutU256,
+                nullifier,
+                proof,
                 commitment,
             ],
             abi: STARKNET_SWAP_ABI,
