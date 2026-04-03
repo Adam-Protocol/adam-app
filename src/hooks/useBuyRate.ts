@@ -178,39 +178,37 @@ function calculateOutputAmount(
   }
 
   try {
-    const amountInWei = toWei(amountIn, 6);
-    const decimalsOut = getTokenDecimals(tokenOut.toUpperCase(), currentChain);
+    const amountInNum = parseFloat(amountIn);
+    
+    // Resolve baseline rate precision dependent on the chain
+    let humanRateBeforeFee: number;
+    if (currentChain === ChainType.STARKNET) {
+      humanRateBeforeFee = Number(rate) / Number(RATE_PRECISION * DECIMAL_ADJUSTMENT);
+    } else {
+      humanRateBeforeFee = Number(rate) / 1000000;
+    }
 
-    // Rate from contract already includes all scaling (1e18)
-    const grossOut = (amountInWei * rate) / RATE_PRECISION;
+    const grossOutNum = amountInNum * humanRateBeforeFee;
+    const netOutNum = grossOutNum * (1 - (Number(feeBps) || 0) / 10000);
 
-    // Apply fee
-    const feeAmount = (grossOut * BigInt(feeBps)) / BigInt(10000);
-    const netOut = grossOut - feeAmount;
-
-    // Convert to decimal with proper rounding
-    const divisor = BigInt(10 ** decimalsOut);
-    const whole = netOut / divisor;
-    const remainder = netOut % divisor;
-
-    // Format with proper decimal places
-    const remainderStr = remainder.toString().padStart(decimalsOut, "0");
-    const fullNumber = `${whole}.${remainderStr}`;
-
-    // Use 2-4 decimals for display
+    // Format with proper display decimals
     const displayDecimals = tokenOut.toLowerCase() === "adngn" ? 2 : 4;
-    const formatted = parseFloat(fullNumber).toFixed(displayDecimals);
-    return formatted;
+    return netOutNum.toFixed(displayDecimals);
   } catch (error) {
     console.error("Error calculating output:", error);
     return "0";
   }
 }
 
-function calculateEffectiveRate(rate: bigint, feeBps: number): number {
-  // Rate from contract includes 1e18 precision + 1e12 decimal adjustment from backend
-  // Divide by both to get human-readable rate
-  const humanRate = (Number(rate) / Number(RATE_PRECISION * DECIMAL_ADJUSTMENT)) * (1 - feeBps / 10000);
+function calculateEffectiveRate(rate: bigint, feeBps: number, currentChain: ChainType): number {
+  let humanRate: number;
+  if (currentChain === ChainType.STARKNET) {
+    // Rate from contract includes 1e18 precision + 1e12 decimal adjustment from backend
+    humanRate = (Number(rate) / Number(RATE_PRECISION * DECIMAL_ADJUSTMENT)) * (1 - feeBps / 10000);
+  } else {
+    // Stacks rate from contract is scaled by 1e6
+    humanRate = (Number(rate) / 1000000) * (1 - feeBps / 10000);
+  }
   return humanRate;
 }
 
@@ -273,7 +271,7 @@ export function useBuyRate(
   }, [rate, amountIn, feeBps, currentChain, tokenOut]);
 
   // Calculate effective rate (human-readable)
-  const effectiveRate = rate ? calculateEffectiveRate(rate, feeBps) : null;
+  const effectiveRate = rate ? calculateEffectiveRate(rate, feeBps, currentChain) : null;
 
   return {
     rate: effectiveRate,
