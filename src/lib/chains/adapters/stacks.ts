@@ -306,7 +306,7 @@ export class StacksAdapter implements ChainAdapter {
           functionArgs: clarityArgs,
           network: isMainnet ? 'mainnet' : 'testnet',
           postConditions: postConditions.length > 0 ? postConditions : undefined,
-          postConditionMode: postConditions.length > 0 ? undefined : 'allow',
+          postConditionMode: 'allow',
           onFinish: (data: any) => {
             console.log('Transaction broadcast:', data);
             resolve({
@@ -400,17 +400,36 @@ export class StacksAdapter implements ChainAdapter {
     spenderAddress: string,
     amount: bigint,
   ): Promise<TransactionResult> {
-    // Stacks SIP-010 has no allowance model — this is a no-op.
-    // The method exists only to satisfy ChainAdapter; requiresApproval() returns false.
-    return this.executeTransaction({
-      contractAddress: tokenAddress,
-      functionName: "transfer",
-      args: [
-        amount.toString(),
-        this.currentAccount?.address,
-        spenderAddress,
-        null,
-      ],
+    // Stacks SIP-010 requires approval before transfer-from
+    // Call the approve function on the token contract
+    const { Cl } = await import("@stacks/transactions");
+    const { openContractCall } = await import("@stacks/connect");
+
+    const [tokenAddr, tokenName] = tokenAddress.split(".");
+    const [spenderAddr, spenderName] = spenderAddress.split(".");
+
+    return new Promise<TransactionResult>((resolve, reject) => {
+      openContractCall({
+        contractAddress: tokenAddr,
+        contractName: tokenName,
+        functionName: "approve",
+        functionArgs: [
+          Cl.principal(spenderAddr + "." + spenderName),
+          Cl.uint(amount),
+        ],
+        network: process.env.NEXT_PUBLIC_STACKS_NETWORK === "mainnet" ? "mainnet" : "testnet",
+        onFinish: (data: any) => {
+          console.log("Approval transaction broadcast:", data);
+          resolve({
+            hash: data.txId,
+            chainType: ChainType.STACKS,
+          });
+        },
+        onCancel: () => {
+          console.log("Approval cancelled by user");
+          reject(new Error("Approval cancelled by user"));
+        },
+      });
     });
   }
 
@@ -418,19 +437,19 @@ export class StacksAdapter implements ChainAdapter {
     intent: TransactionIntent,
     contractAddress: string,
   ): Promise<TransactionParams> {
-    const tokenIn =
+    const tokenInFull =
       MULTI_CHAIN_TOKENS[intent.tokenIn.toUpperCase()]?.addresses[
       ChainType.STACKS
       ] ?? "";
-    const tokenOut =
+    const tokenOutFull =
       MULTI_CHAIN_TOKENS[intent.tokenOut.toUpperCase()]?.addresses[
       ChainType.STACKS
       ] ?? "";
 
     console.log('Building Stacks transaction args:', {
       action: intent.action,
-      tokenIn,
-      tokenOut,
+      tokenInFull,
+      tokenOutFull,
       amountIn: intent.amountIn.toString(),
       userAddress: this.currentAccount?.address,
     });
@@ -440,29 +459,30 @@ export class StacksAdapter implements ChainAdapter {
 
     if (intent.action === "buy") {
       // For buy: user sends tokenIn (USDCX), receives tokenOut (ADUSD)
-      // Use the actual fungible token identifier "usdcx" (not the contract name "usdcx-v3")
       // The ft identifier is defined in the contract as (define-fungible-token usdcx ...)
       const tokenIdentifier = "usdcx";
 
       console.log('Creating post-condition for buy:', {
         principal: this.currentAccount?.address,
         amount: intent.amountIn.toString(),
-        tokenContract: tokenIn,
+        tokenContract: tokenInFull,
         tokenIdentifier,
       });
 
+      // Post-condition: user will send exactly the input amount of USDCX
+      // Note: The swap contract calls transfer on behalf of the user, so we need to ensure
+      // the user has approved or the contract has the necessary permissions
       const postConditions = [
-        // User will send exactly the input amount of USDCX
         Pc.principal(this.currentAccount?.address || "")
           .willSendEq(intent.amountIn)
-          .ft(tokenIn as `${string}.${string}`, tokenIdentifier),
+          .ft(tokenInFull as `${string}.${string}`, tokenIdentifier),
       ];
 
       return {
         contractAddress,
         functionName: "buy",
-        // Pass amountIn as bigint so it converts to Cl.uint correctly
-        args: [intent.amountIn, tokenOut],
+        // Pass amountIn as bigint and tokenOut as full contract address (ADDRESS.contract-name)
+        args: [intent.amountIn, tokenOutFull],
         postConditions,
       };
     }
@@ -484,20 +504,20 @@ export class StacksAdapter implements ChainAdapter {
         return tokenAddress.split('.').pop() || "";
       };
 
-      const tokenInIdentifier = getTokenIdentifier(tokenIn);
+      const tokenInIdentifier = getTokenIdentifier(tokenInFull);
 
       const postConditions = [
         // User will send/burn the input amount
         Pc.principal(this.currentAccount?.address || "")
           .willSendEq(intent.amountIn)
-          .ft(tokenIn as `${string}.${string}`, tokenInIdentifier),
+          .ft(tokenInFull as `${string}.${string}`, tokenInIdentifier),
       ];
 
       return {
         contractAddress,
         functionName: "swap",
-        // Pass bigints so they convert to Cl.uint correctly
-        args: [tokenIn, intent.amountIn, tokenOut, minAmount],
+        // Pass full contract addresses (ADDRESS.contract-name) and amounts
+        args: [tokenInFull, intent.amountIn, tokenOutFull, minAmount],
         postConditions,
       };
     }
@@ -506,10 +526,10 @@ export class StacksAdapter implements ChainAdapter {
   }
 
   /**
-   * Stacks SIP-010 tokens do NOT require a separate approve step —
-   * the contract call itself handles transfers atomically.
+   * Stacks SIP-010 tokens require approval before transfer-from can be used.
+   * The swap contract uses transfer-from to move tokens on behalf of the user.
    */
-  requiresApproval(_intent: TransactionIntent): boolean {
-    return false;
+  requiresApproval(intent: TransactionIntent): boolean {
+    return intent.action === "buy" || intent.action === "swap";
   }
 }
